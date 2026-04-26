@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VitalAI — Medications</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#050d1a;--surface:#0a1628;--card:#0f1f38;--card2:#0c1a30;
+      --accent:#00e5ff;--accent2:#00ff88;--accent3:#ff6b6b;--accent4:#ffb347;
+      --purple:#a78bfa;--text:#e8f4f8;--muted:#7a9bb5;--border:rgba(0,229,255,0.1);
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:grid;grid-template-columns:260px 1fr;grid-template-rows:auto 1fr}
+
+    /* ── Sidebar ── */
+    .sidebar{grid-row:1/-1;background:var(--surface);border-right:1px solid var(--border);padding:28px 20px;display:flex;flex-direction:column;gap:4px;height:100vh;position:sticky;top:0;overflow-y:auto}
+    .logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);padding:0 12px 24px;border-bottom:1px solid var(--border);margin-bottom:12px}
+    .logo span{color:var(--accent2)}
+    .user-pill{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+    .user-pill img{width:36px;height:36px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
+    .user-name{font-size:13px;font-weight:500}
+    .user-email{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;cursor:pointer;font-size:14px;color:var(--muted);transition:all 0.2s;text-decoration:none;border:none;background:none;width:100%;text-align:left}
+    .nav-item:hover{background:rgba(0,229,255,0.06);color:var(--text)}
+    .nav-item.active{background:rgba(0,229,255,0.1);color:var(--text);border-left:3px solid var(--accent)}
+    .nav-item .icon{font-size:18px;width:24px;text-align:center}
+    .sidebar-footer{margin-top:auto;padding-top:16px;border-top:1px solid var(--border)}
+    .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:var(--accent3);font-size:14px;cursor:pointer;text-decoration:none;transition:background 0.2s}
+    .logout-btn:hover{background:rgba(255,107,107,0.08)}
+
+    /* ── Topbar ── */
+    .topbar{grid-column:2;background:var(--surface);border-bottom:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .topbar-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700}
+    .last-updated{font-size:12px;color:var(--muted)}
+
+    /* ── Main ── */
+    main{grid-column:2;padding:28px 32px;overflow-y:auto}
+
+    /* ── Tab nav ── */
+    .tab-bar{display:flex;gap:6px;margin-bottom:28px;background:var(--card);padding:6px;border-radius:14px;border:1px solid var(--border);width:fit-content}
+    .tab-btn{padding:10px 20px;border-radius:10px;border:none;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:8px;white-space:nowrap}
+    .tab-btn:hover{color:var(--text)}
+    .tab-btn.active{background:var(--accent);color:#050d1a;font-weight:700}
+    .tab-pane{display:none}
+    .tab-pane.active{display:block}
+
+    /* ── Cards / Panels ── */
+    .panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin-bottom:20px}
+    .panel-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+    .section-heading{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:20px}
+
+    /* ── Alert cards ── */
+    .alert-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+    .alert-card{border-radius:14px;padding:18px;border:1px solid}
+    .alert-card.info{background:rgba(0,229,255,0.06);border-color:rgba(0,229,255,0.2)}
+    .alert-card.warning{background:rgba(255,179,71,0.08);border-color:rgba(255,179,71,0.25)}
+    .alert-card.danger{background:rgba(255,107,107,0.08);border-color:rgba(255,107,107,0.25)}
+    .alert-card .ac-num{font-family:'Syne',sans-serif;font-size:32px;font-weight:800}
+    .alert-card .ac-lbl{font-size:12px;color:var(--muted);margin-top:4px}
+    .alert-card .ac-list{margin-top:10px;font-size:12px}
+    .alert-card .ac-list li{padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+
+    /* ── Search ── */
+    .search-row{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+    .search-input{flex:1;min-width:200px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s}
+    .search-input:focus{border-color:rgba(0,229,255,0.4)}
+    .search-input::placeholder{color:var(--muted)}
+    .filter-select{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer}
+    .search-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:11px 22px;color:#050d1a;font-weight:700;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;transition:opacity 0.2s;white-space:nowrap}
+    .search-btn:hover{opacity:0.85}
+
+    /* ── Medicine Cards ── */
+    .med-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+    .med-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:all 0.2s;position:relative}
+    .med-card:hover{border-color:rgba(0,229,255,0.3);transform:translateY(-2px)}
+    .med-card .mc-type{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+    .med-card .mc-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px}
+    .med-card .mc-generic{font-size:12px;color:var(--muted);margin-bottom:8px}
+    .med-card .mc-usage{font-size:13px;color:var(--text);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .mc-badge{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;margin-top:8px}
+    .mc-badge.rx{background:rgba(255,107,107,0.1);color:var(--accent3);border:1px solid rgba(255,107,107,0.3)}
+    .mc-badge.otc{background:rgba(0,255,136,0.1);color:var(--accent2);border:1px solid rgba(0,255,136,0.3)}
+    .mc-badge.ayur{background:rgba(167,139,250,0.1);color:var(--purple);border:1px solid rgba(167,139,250,0.3)}
+
+    /* ── My Medicines list ── */
+    .my-med-item{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px;display:flex;align-items:flex-start;gap:16px}
+    .my-med-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .my-med-info{flex:1}
+    .my-med-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px}
+    .my-med-meta{font-size:12px;color:var(--muted);margin-bottom:8px}
+    .my-med-schedules{display:flex;gap:6px;flex-wrap:wrap}
+    .sched-pill{padding:4px 10px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.15);border-radius:50px;font-size:11px;color:var(--accent)}
+    .my-med-actions{display:flex;gap:8px;flex-shrink:0}
+    .icon-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:7px 10px;cursor:pointer;font-size:14px;transition:all 0.2s;color:var(--text)}
+    .icon-btn:hover{background:rgba(255,255,255,0.06)}
+    .icon-btn.danger:hover{background:rgba(255,107,107,0.1);border-color:rgba(255,107,107,0.3);color:var(--accent3)}
+    .refill-badge{font-size:11px;padding:3px 8px;background:rgba(255,179,71,0.1);color:var(--accent4);border:1px solid rgba(255,179,71,0.3);border-radius:50px;margin-left:8px}
+    .expiry-badge{font-size:11px;padding:3px 8px;background:rgba(255,107,107,0.1);color:var(--accent3);border:1px solid rgba(255,107,107,0.3);border-radius:50px;margin-left:8px}
+
+    /* ── Today tracker ── */
+    .dose-item{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:10px;display:flex;align-items:center;gap:16px}
+    .dose-time{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--accent);min-width:70px}
+    .dose-info{flex:1}
+    .dose-name{font-weight:600;font-size:14px;margin-bottom:2px}
+    .dose-detail{font-size:12px;color:var(--muted)}
+    .dose-actions{display:flex;gap:8px}
+    .dose-btn{padding:8px 16px;border-radius:8px;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s}
+    .dose-btn.taken{background:rgba(0,255,136,0.1);color:var(--accent2);border:1px solid rgba(0,255,136,0.3)}
+    .dose-btn.taken:hover{background:rgba(0,255,136,0.2)}
+    .dose-btn.missed{background:rgba(255,107,107,0.1);color:var(--accent3);border:1px solid rgba(255,107,107,0.3)}
+    .dose-btn.missed:hover{background:rgba(255,107,107,0.2)}
+    .dose-btn.skip{background:rgba(255,255,255,0.04);color:var(--muted);border:1px solid var(--border)}
+    .dose-status-badge{padding:5px 12px;border-radius:50px;font-size:11px;font-weight:700}
+    .dose-status-badge.taken{background:rgba(0,255,136,0.15);color:var(--accent2)}
+    .dose-status-badge.missed{background:rgba(255,107,107,0.15);color:var(--accent3)}
+    .dose-status-badge.skipped{background:rgba(255,255,255,0.06);color:var(--muted)}
+
+    /* ── Adherence ── */
+    .adherence-ring-wrap{display:flex;align-items:center;gap:32px;margin-bottom:24px}
+    .ring-svg{flex-shrink:0}
+    .ring-pct{font-family:'Syne',sans-serif;font-size:48px;font-weight:800}
+    .adherence-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+    .adh-stat{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+    .adh-stat .num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800}
+    .adh-stat .lbl{font-size:11px;color:var(--muted);margin-top:4px}
+    .med-adh-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+    .med-adh-row:last-child{border:none}
+    .med-adh-bar{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
+    .med-adh-fill{height:100%;border-radius:4px;transition:width 1s ease}
+
+    /* ── Interaction checker ── */
+    .interaction-picker{display:flex;gap:12px;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap}
+    .interaction-selected{display:flex;flex-wrap:wrap;gap:8px;min-height:44px;flex:1;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;align-items:center}
+    .int-tag{display:flex;align-items:center;gap:6px;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.2);border-radius:50px;padding:4px 12px;font-size:12px}
+    .int-tag button{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1}
+    .check-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:12px 24px;color:#050d1a;font-weight:700;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;white-space:nowrap}
+    .interaction-result{border-radius:14px;padding:20px;border:1px solid;margin-bottom:12px}
+    .interaction-result.severe{background:rgba(255,107,107,0.08);border-color:rgba(255,107,107,0.3)}
+    .interaction-result.moderate{background:rgba(255,179,71,0.08);border-color:rgba(255,179,71,0.3)}
+    .interaction-result.mild{background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3)}
+    .ir-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-weight:700;font-size:15px}
+    .severity-dot{width:10px;height:10px;border-radius:50%}
+    .severity-dot.severe{background:var(--accent3)}
+    .severity-dot.moderate{background:var(--accent4)}
+    .severity-dot.mild{background:var(--purple)}
+    .ir-advice{background:rgba(0,0,0,0.2);border-radius:8px;padding:10px 14px;font-size:13px;margin-top:8px;color:var(--muted)}
+
+    /* ── Report ── */
+    .report-section{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}
+    .report-section h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+    .report-med-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .report-med-row:last-child{border:none}
+    .report-alert-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px}
+    .print-btn{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 20px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.2s}
+    .print-btn:hover{background:rgba(0,229,255,0.08);border-color:rgba(0,229,255,0.3)}
+
+    /* ── Modal ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;position:relative}
+    .modal h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:24px}
+    .modal-close{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px;border-radius:6px}
+    .modal-close:hover{color:var(--text)}
+
+    /* ── Forms ── */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group.full{grid-column:1/-1}
+    .form-label{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+    .form-input,.form-select,.form-textarea{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;width:100%}
+    .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:rgba(0,229,255,0.4)}
+    .form-textarea{resize:vertical;min-height:80px}
+    .form-row{display:flex;gap:8px;margin-bottom:16px}
+    .time-input-wrap{display:flex;gap:8px;flex-wrap:wrap}
+    .time-input{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:110px}
+    .add-time-btn{background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:8px 12px;color:var(--accent);font-size:13px;cursor:pointer}
+    .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:11px 24px;color:#050d1a;font-weight:700;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;transition:opacity 0.2s}
+    .btn-primary:hover{opacity:0.85}
+    .btn-secondary{background:transparent;border:1px solid var(--border);border-radius:10px;padding:11px 20px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all 0.2s}
+    .btn-secondary:hover{background:rgba(255,255,255,0.05)}
+
+    /* ── Medicine detail modal ── */
+    .detail-row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .detail-row:last-child{border:none}
+    .detail-label{font-size:12px;color:var(--muted);width:140px;flex-shrink:0;padding-top:2px}
+    .detail-value{font-size:13px;line-height:1.5}
+    .warning-box{background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--accent3);margin-top:12px}
+    .success-box{background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--accent2);margin-top:8px}
+    .empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+    .empty-state .es-icon{font-size:48px;margin-bottom:12px}
+    .empty-state .es-text{font-size:15px}
+    .loading-text{color:var(--muted);font-size:14px;padding:20px;text-align:center}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:var(--accent2);animation:pdot 2s infinite}
+    @keyframes pdot{0%,100%{opacity:1}50%{opacity:0.3}}
+
+    @media(max-width:900px){
+      .alert-grid{grid-template-columns:1fr 1fr}
+      .form-grid{grid-template-columns:1fr}
+      .adherence-grid{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="logo">Vital<span>AI</span></div>
+  <div class="user-pill">
+    <img id="userAvatar" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><rect width='36' height='36' fill='%2300e5ff'/><text x='18' y='24' font-size='16' text-anchor='middle' fill='%23050d1a'>U</text></svg>" alt="Avatar">
+    <div>
+      <div class="user-name" id="userName">Loading...</div>
+      <div class="user-email" id="userEmail">—</div>
+    </div>
+  </div>
+  <a class="nav-item" href="/dashboard"><span class="icon">📊</span> Dashboard</a>
+  <a class="nav-item" href="/dashboard"><span class="icon">🏃</span> Activity</a>
+  <a class="nav-item" href="/dashboard"><span class="icon">❤️</span> Heart Rate</a>
+  <a class="nav-item" href="/dashboard"><span class="icon">😴</span> Sleep</a>
+  <a class="nav-item" href="/dashboard"><span class="icon">🤖</span> AI Assistant</a>
+  <a class="nav-item active" href="/medications"><span class="icon">💊</span> Medications</a>
+  <a class="nav-item" href="/dashboard"><span class="icon">⚙️</span> Settings</a>
+  <div class="sidebar-footer">
+    <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+  </div>
+</aside>
+
+<!-- ── Topbar ── -->
+<header class="topbar">
+  <div>
+    <div class="topbar-title">💊 Medication Manager</div>
+    <div class="last-updated" id="alertSummary">Loading alerts...</div>
+  </div>
+  <button class="btn-primary" onclick="openAddMedModal()">+ Add Medicine</button>
+</header>
+
+<main>
+
+  <!-- Alert cards -->
+  <div class="alert-grid">
+    <div class="alert-card info">
+      <div class="ac-num" id="alertActiveMeds" style="color:var(--accent)">—</div>
+      <div class="ac-lbl">Active Medicines</div>
+    </div>
+    <div class="alert-card warning">
+      <div class="ac-num" id="alertRefill" style="color:var(--accent4)">0</div>
+      <div class="ac-lbl">Refill Needed</div>
+      <ul class="ac-list" id="alertRefillList"></ul>
+    </div>
+    <div class="alert-card danger">
+      <div class="ac-num" id="alertExpiry" style="color:var(--accent3)">0</div>
+      <div class="ac-lbl">Expiring Soon (30d)</div>
+      <ul class="ac-list" id="alertExpiryList"></ul>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('today',this)">📋 Today's Doses</button>
+    <button class="tab-btn" onclick="switchTab('mymeds',this)">💊 My Medicines</button>
+    <button class="tab-btn" onclick="switchTab('search',this)">🔍 Medicine Search</button>
+    <button class="tab-btn" onclick="switchTab('interactions',this)">⚠️ Interactions</button>
+    <button class="tab-btn" onclick="switchTab('adherence',this)">📊 Adherence</button>
+    <button class="tab-btn" onclick="switchTab('report',this)">📄 Report</button>
+  </div>
+
+  <!-- ══ TODAY'S DOSES ══ -->
+  <div class="tab-pane active" id="pane-today">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="section-heading" style="margin:0">📋 Today's Schedule — <span id="todayDate"></span></div>
+      <button class="search-btn" onclick="loadToday()">🔄 Refresh</button>
+    </div>
+    <div id="todayDoses"><div class="loading-text">Loading today's doses...</div></div>
+  </div>
+
+  <!-- ══ MY MEDICINES ══ -->
+  <div class="tab-pane" id="pane-mymeds">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="section-heading" style="margin:0">💊 My Medicine Cabinet</div>
+      <button class="btn-primary" onclick="openAddMedModal()">+ Add Medicine</button>
+    </div>
+    <div id="myMedsList"><div class="loading-text">Loading your medicines...</div></div>
+  </div>
+
+  <!-- ══ SEARCH ══ -->
+  <div class="tab-pane" id="pane-search">
+    <div class="section-heading">🔍 Indian Medicine Database</div>
+    <div class="search-row">
+      <input class="search-input" id="searchQ" placeholder="Search by name, generic name, brand, or use..." onkeydown="if(event.key==='Enter')doSearch()"/>
+      <select class="filter-select" id="filterType">
+        <option value="">All Types</option>
+        <option value="tablet">Tablet</option>
+        <option value="capsule">Capsule</option>
+        <option value="syrup">Syrup</option>
+        <option value="injection">Injection</option>
+        <option value="cream">Cream</option>
+        <option value="drops">Drops</option>
+        <option value="inhaler">Inhaler</option>
+        <option value="powder">Powder</option>
+      </select>
+      <select class="filter-select" id="filterSystem">
+        <option value="">All Systems</option>
+        <option value="allopathic">Allopathic</option>
+        <option value="ayurvedic">Ayurvedic</option>
+        <option value="homeopathic">Homeopathic</option>
+      </select>
+      <button class="search-btn" onclick="doSearch()">🔍 Search</button>
+    </div>
+    <div id="searchResults"><div class="loading-text">Search for any medicine above...</div></div>
+  </div>
+
+  <!-- ══ INTERACTIONS ══ -->
+  <div class="tab-pane" id="pane-interactions">
+    <div class="section-heading">⚠️ Drug Interaction Checker</div>
+    <div class="panel">
+      <div class="panel-title">Select medicines to check interactions</div>
+      <div class="search-row">
+        <input class="search-input" id="intSearchQ" placeholder="Search medicine to add..." onkeydown="if(event.key==='Enter')searchInteractionMed()"/>
+        <button class="search-btn" onclick="searchInteractionMed()">+ Add</button>
+      </div>
+      <div id="intSearchResults" style="margin-bottom:16px"></div>
+      <div style="margin-bottom:16px">
+        <div class="form-label" style="margin-bottom:8px">Selected Medicines:</div>
+        <div class="interaction-selected" id="intSelected">
+          <span style="color:var(--muted);font-size:13px">No medicines selected yet...</span>
+        </div>
+      </div>
+      <button class="check-btn" onclick="checkInteractions()">🔍 Check Interactions</button>
+    </div>
+    <div id="interactionResults"></div>
+  </div>
+
+  <!-- ══ ADHERENCE ══ -->
+  <div class="tab-pane" id="pane-adherence">
+    <div class="section-heading">📊 Medication Adherence</div>
+    <div class="panel">
+      <div class="panel-title"><div class="status-dot"></div> 30-Day Compliance Overview</div>
+      <div class="adherence-ring-wrap">
+        <svg class="ring-svg" width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="12"/>
+          <circle id="adherenceRing" cx="60" cy="60" r="50" fill="none" stroke="url(#ringGrad)" stroke-width="12" stroke-linecap="round"
+                  stroke-dasharray="314" stroke-dashoffset="314" transform="rotate(-90 60 60)" style="transition:stroke-dashoffset 1.5s ease"/>
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#00e5ff"/>
+              <stop offset="100%" stop-color="#00ff88"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div>
+          <div class="ring-pct" id="adherencePct">—%</div>
+          <div style="color:var(--muted);font-size:13px">Medication Compliance</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px" id="adherencePeriod">Last 30 days</div>
+        </div>
+      </div>
+      <div class="adherence-grid">
+        <div class="adh-stat"><div class="num" id="adhTaken" style="color:var(--accent2)">—</div><div class="lbl">Doses Taken ✅</div></div>
+        <div class="adh-stat"><div class="num" id="adhMissed" style="color:var(--accent3)">—</div><div class="lbl">Doses Missed ❌</div></div>
+        <div class="adh-stat"><div class="num" id="adhTotal" style="color:var(--accent)">—</div><div class="lbl">Total Logged</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Per-Medicine Adherence</div>
+      <div id="perMedAdh"><div class="loading-text">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- ══ REPORT ══ -->
+  <div class="tab-pane" id="pane-report">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="section-heading" style="margin:0">📄 Medication Report</div>
+      <button class="print-btn" onclick="window.print()">🖨️ Print Report</button>
+    </div>
+    <div id="reportContent"><div class="loading-text">Loading report...</div></div>
+  </div>
+
+</main>
+
+<!-- ════ ADD MEDICINE MODAL ════ -->
+<div class="modal-overlay" id="addMedModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addMedModal')">✕</button>
+    <h2>💊 Add Medicine to My List</h2>
+
+    <div style="margin-bottom:16px">
+      <div class="form-label" style="margin-bottom:8px">Search Medicine Catalogue</div>
+      <div style="display:flex;gap:8px">
+        <input class="form-input" id="addMedSearch" placeholder="Type medicine name..." onkeydown="if(event.key==='Enter')searchForAdd()"/>
+        <button class="btn-primary" onclick="searchForAdd()" style="white-space:nowrap">Search</button>
+      </div>
+      <div id="addMedSearchResults" style="margin-top:8px"></div>
+    </div>
+
+    <div id="addMedForm" style="display:none">
+      <div style="padding:12px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.2);border-radius:10px;margin-bottom:16px">
+        <div style="font-weight:600" id="selectedMedName">—</div>
+        <div style="font-size:12px;color:var(--muted)" id="selectedMedGeneric">—</div>
+      </div>
+      <input type="hidden" id="selectedMedId"/>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Dosage Amount *</label>
+          <input class="form-input" id="fDosage" placeholder="e.g. 500mg, 1 tablet"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Frequency *</label>
+          <select class="form-select" id="fFrequency" onchange="updateTimeInputs()">
+            <option value="Once daily">Once daily</option>
+            <option value="Twice daily">Twice daily</option>
+            <option value="Three times daily">Three times daily</option>
+            <option value="Four times daily">Four times daily</option>
+            <option value="Every alternate day">Every alternate day</option>
+            <option value="Weekly">Weekly</option>
+            <option value="As needed">As needed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Meal Timing</label>
+          <select class="form-select" id="fMealTiming">
+            <option value="after_meal">After Meal</option>
+            <option value="before_meal">Before Meal</option>
+            <option value="with_meal">With Meal</option>
+            <option value="empty_stomach">Empty Stomach</option>
+            <option value="any">Any Time</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prescribed By</label>
+          <input class="form-input" id="fPrescribedBy" placeholder="Doctor's name"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Start Date *</label>
+          <input class="form-input" type="date" id="fStartDate"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date (optional)</label>
+          <input class="form-input" type="date" id="fEndDate"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total Quantity</label>
+          <input class="form-input" type="number" id="fQty" placeholder="e.g. 30"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Expiry Date</label>
+          <input class="form-input" type="date" id="fExpiry"/>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Dose Times</label>
+          <div class="time-input-wrap" id="timeInputsWrap">
+            <input class="time-input" type="time" id="time0" value="08:00"/>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="fNotes" placeholder="Any special instructions..."></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="closeModal('addMedModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveMyMedicine()">💾 Save Medicine</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MEDICINE DETAIL MODAL ════ -->
+<div class="modal-overlay" id="medDetailModal">
+  <div class="modal" style="max-width:700px">
+    <button class="modal-close" onclick="closeModal('medDetailModal')">✕</button>
+    <div id="medDetailContent"></div>
+  </div>
+</div>
+
+<!-- ════ EDIT MY MED MODAL ════ -->
+<div class="modal-overlay" id="editMedModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('editMedModal')">✕</button>
+    <h2>✏️ Edit Medicine</h2>
+    <input type="hidden" id="editMedId"/>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Medicine Name</label>
+        <input class="form-input" id="eName"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Dosage Amount</label>
+        <input class="form-input" id="eDosage"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Frequency</label>
+        <select class="form-select" id="eFrequency">
+          <option>Once daily</option><option>Twice daily</option>
+          <option>Three times daily</option><option>Four times daily</option>
+          <option>Every alternate day</option><option>Weekly</option><option>As needed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Meal Timing</label>
+        <select class="form-select" id="eMealTiming">
+          <option value="after_meal">After Meal</option>
+          <option value="before_meal">Before Meal</option>
+          <option value="with_meal">With Meal</option>
+          <option value="empty_stomach">Empty Stomach</option>
+          <option value="any">Any Time</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">End Date</label>
+        <input class="form-input" type="date" id="eEndDate"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Remaining Qty</label>
+        <input class="form-input" type="number" id="eQty"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expiry Date</label>
+        <input class="form-input" type="date" id="eExpiry"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Prescribed By</label>
+        <input class="form-input" id="ePrescribedBy"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="eNotes"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="closeModal('editMedModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveEditMedicine()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TOAST ════ -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:13px;z-index:9999;display:none;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4)"></div>
+
+<script>
+  // ── State ──
+  let intSelectedMeds = [];   // [{id, name}]
+  let allMyCatalogue = [];    // from search for interactions
+
+  // ── Toast ──
+  function toast(msg, type='info') {
+    const t = document.getElementById('toast');
+    const colors = {info:'var(--accent)', success:'var(--accent2)', error:'var(--accent3)', warning:'var(--accent4)'};
+    t.innerHTML = `<span style="color:${colors[type]}">●</span> ${msg}`;
+    t.style.display = 'flex';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => t.style.display='none', 3500);
+  }
+
+  // ── Init ──
+  async function loadUser() {
+    try {
+      const d = await(await fetch('/api/status')).json();
+      if(d.user) {
+        document.getElementById('userName').textContent = d.user.name||'User';
+        document.getElementById('userEmail').textContent = d.user.email||'';
+        if(d.user.picture) document.getElementById('userAvatar').src = d.user.picture;
+      }
+    } catch(e){}
+  }
+
+  // ── Tab switching ──
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('pane-'+name).classList.add('active');
+    btn.classList.add('active');
+    if(name==='today') loadToday();
+    if(name==='mymeds') loadMyMeds();
+    if(name==='search') doSearch();
+    if(name==='adherence') loadAdherence();
+    if(name==='report') loadReport();
+  }
+
+  // ── Alerts ──
+  async function loadAlerts() {
+    try {
+      const data = await(await fetch('/api/med/alerts')).json();
+      document.getElementById('alertRefill').textContent = data.refill.length;
+      document.getElementById('alertExpiry').textContent = data.expiry.length;
+
+      const rl = document.getElementById('alertRefillList');
+      rl.innerHTML = data.refill.map(r=>`<li>${r.name} (${r.remaining_qty} left)</li>`).join('');
+
+      const el = document.getElementById('alertExpiryList');
+      el.innerHTML = data.expiry.map(r=>`<li>${r.name} — ${r.days_left}d left</li>`).join('');
+
+      const missed = data.missed_today.length;
+      document.getElementById('alertSummary').textContent =
+        missed > 0 ? `⚠️ ${missed} dose(s) overdue today` : '✅ All doses on track today';
+    } catch(e){}
+  }
+
+  // ── TODAY'S DOSES ──
+  async function loadToday() {
+    document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+    try {
+      const doses = await(await fetch('/api/med/today')).json();
+      const el = document.getElementById('todayDoses');
+
+      if(!doses.length) {
+        el.innerHTML = `<div class="empty-state"><div class="es-icon">💊</div><div class="es-text">No doses scheduled today.<br>Add medicines to see your daily schedule.</div></div>`;
+        return;
+      }
+
+      el.innerHTML = doses.map(d => {
+        const mealMap = {before_meal:'Before meal',after_meal:'After meal',with_meal:'With meal',empty_stomach:'Empty stomach',any:''};
+        const meal = mealMap[d.meal_timing]||'';
+        const statusHtml = d.status !== 'pending'
+          ? `<span class="dose-status-badge ${d.status}">${d.status==='taken'?'✅ Taken':d.status==='missed'?'❌ Missed':'⏭ Skipped'}</span>`
+          : `<button class="dose-btn taken" onclick="logDose(${d.user_med_id},${d.schedule_id},'${d.scheduled_time}','taken')">✅ Taken</button>
+             <button class="dose-btn missed" onclick="logDose(${d.user_med_id},${d.schedule_id},'${d.scheduled_time}','missed')">❌ Miss</button>
+             <button class="dose-btn skip" onclick="logDose(${d.user_med_id},${d.schedule_id},'${d.scheduled_time}','skipped')">⏭ Skip</button>`;
+
+        return `<div class="dose-item">
+          <div class="dose-time">${d.scheduled_time}</div>
+          <div class="dose-info">
+            <div class="dose-name">${d.medicine_name}</div>
+            <div class="dose-detail">${d.dosage_amount} · ${d.dose_label||''} ${meal?'· '+meal:''}</div>
+          </div>
+          <div class="dose-actions">${statusHtml}</div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      document.getElementById('todayDoses').innerHTML = `<div class="loading-text">Failed to load. Please try again.</div>`;
+    }
+  }
+
+  async function logDose(medId, schedId, time, status) {
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      await fetch('/api/med/log', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({user_med_id:medId, schedule_id:schedId, scheduled_date:today, scheduled_time:time, status})
+      });
+      toast(status==='taken'?'✅ Dose marked as taken!':status==='missed'?'Dose marked as missed':'Dose skipped', status==='taken'?'success':'warning');
+      loadToday();
+      loadAlerts();
+    } catch(e){ toast('Failed to log dose','error'); }
+  }
+
+  // ── MY MEDICINES ──
+  async function loadMyMeds() {
+    try {
+      const meds = await(await fetch('/api/med/my-medicines')).json();
+      const el = document.getElementById('myMedsList');
+      document.getElementById('alertActiveMeds').textContent = meds.length;
+
+      if(!meds.length) {
+        el.innerHTML = `<div class="empty-state"><div class="es-icon">💊</div><div class="es-text">No medicines added yet.<br>Click "Add Medicine" to start tracking.</div></div>`;
+        return;
+      }
+
+      const icons = {tablet:'💊',capsule:'💉',syrup:'🧴',injection:'💉',inhaler:'😮‍💨',powder:'🫙',drops:'💧',cream:'🧴',other:'💊'};
+      const colors = ['rgba(0,229,255,0.1)','rgba(0,255,136,0.1)','rgba(167,139,250,0.1)','rgba(255,179,71,0.1)','rgba(255,107,107,0.1)'];
+      const accentColors = ['var(--accent)','var(--accent2)','var(--purple)','var(--accent4)','var(--accent3)'];
+
+      el.innerHTML = meds.map((m,i) => {
+        const col = i % colors.length;
+        const icon = icons[m.medicine_type]||'💊';
+        const name = m.custom_name || m.cat_name || 'Unknown Medicine';
+        const schPills = (m.schedules||[]).map(s=>`<span class="sched-pill">⏰ ${s.scheduled_time} ${s.dose_label?'('+s.dose_label+')':''}</span>`).join('');
+        const refillBadge = m.refill_needed ? `<span class="refill-badge">⚠️ Refill: ${m.remaining_qty} left</span>` : '';
+        const expiryBadge = m.expiry_alert ? `<span class="expiry-badge">⏳ Expires: ${m.expiry_days_left}d</span>` : '';
+        const mealMap = {before_meal:'Before meal',after_meal:'After meal',with_meal:'With meal',empty_stomach:'Empty stomach',any:'Any time'};
+
+        return `<div class="my-med-item">
+          <div class="my-med-icon" style="background:${colors[col]};color:${accentColors[col]}">${icon}</div>
+          <div class="my-med-info">
+            <div class="my-med-name">${name} ${refillBadge} ${expiryBadge}</div>
+            <div class="my-med-meta">${m.dosage_amount} · ${m.frequency} · ${mealMap[m.meal_timing]||''} ${m.prescribed_by?'· Dr. '+m.prescribed_by:''}</div>
+            <div class="my-med-schedules">${schPills || '<span style="font-size:12px;color:var(--muted)">No schedule set</span>'}</div>
+          </div>
+          <div class="my-med-actions">
+            <button class="icon-btn" title="View Details" onclick="viewMedDetail(${m.catalogue_id||0})">👁</button>
+            <button class="icon-btn" title="Edit" onclick="openEditModal(${JSON.stringify(m).replace(/"/g,'&quot;')})">✏️</button>
+            <button class="icon-btn danger" title="Remove" onclick="deleteMyMed(${m.id},'${name}')">🗑</button>
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      document.getElementById('myMedsList').innerHTML = `<div class="loading-text">Failed to load medicines.</div>`;
+    }
+  }
+
+  async function deleteMyMed(id, name) {
+    if(!confirm(`Remove "${name}" from your medicine list?`)) return;
+    await fetch(`/api/med/my-medicines/${id}`, {method:'DELETE'});
+    toast(`${name} removed`, 'info');
+    loadMyMeds();
+    loadAlerts();
+  }
+
+  // ── SEARCH ──
+  async function doSearch() {
+    const q = document.getElementById('searchQ').value.trim();
+    const type = document.getElementById('filterType').value;
+    const system = document.getElementById('filterSystem').value;
+
+    const params = new URLSearchParams();
+    if(q) params.set('q',q);
+    if(type) params.set('type',type);
+    if(system) params.set('system',system);
+
+    const el = document.getElementById('searchResults');
+    el.innerHTML = '<div class="loading-text">Searching...</div>';
+
+    try {
+      const meds = await(await fetch('/api/med/catalogue/search?'+params)).json();
+
+      if(!meds.length) {
+        el.innerHTML = `<div class="empty-state"><div class="es-icon">🔍</div><div class="es-text">No medicines found. Try a different search.</div></div>`;
+        return;
+      }
+
+      el.innerHTML = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">${meds.length} medicine(s) found</div>
+        <div class="med-grid">${meds.map(m => {
+          const sysTag = m.ayurvedic_allopathic==='ayurvedic'?'<span class="mc-badge ayur">Ayurvedic</span>':'';
+          const rxTag = m.prescription_req?'<span class="mc-badge rx">Rx Required</span>':'<span class="mc-badge otc">OTC</span>';
+          return `<div class="med-card" onclick="viewMedDetail(${m.id})">
+            <div class="mc-type">${m.medicine_type||'medicine'} · ${m.category||''}</div>
+            <div class="mc-name">${m.medicine_name}</div>
+            <div class="mc-generic">${m.generic_name} ${m.brand_name?'· '+m.brand_name:''}</div>
+            <div class="mc-usage">${m.usage_purpose||''}</div>
+            ${rxTag} ${sysTag}
+          </div>`;
+        }).join('')}</div>`;
+    } catch(e) {
+      el.innerHTML = `<div class="loading-text">Search failed. Please try again.</div>`;
+    }
+  }
+
+  // ── MEDICINE DETAIL ──
+  async function viewMedDetail(id) {
+    if(!id) return;
+    try {
+      const m = await(await fetch(`/api/med/catalogue/${id}`)).json();
+      const rxHtml = m.prescription_req
+        ? `<div class="warning-box">⚠️ Prescription Required — Do not self-medicate. Consult a licensed doctor before use.</div>`
+        : `<div class="success-box">✅ Over-the-Counter (OTC) — Available without prescription, but follow dosage guidelines.</div>`;
+
+      document.getElementById('medDetailContent').innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <div style="font-size:36px">💊</div>
+          <div>
+            <div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800">${m.medicine_name}</div>
+            <div style="font-size:13px;color:var(--muted)">${m.generic_name} ${m.brand_name?'· '+m.brand_name:''}</div>
+          </div>
+        </div>
+        ${rxHtml}
+        <div style="margin-top:16px">
+          ${row('Type', capitalize(m.medicine_type))}
+          ${row('Dosage', m.dosage)}
+          ${row('Category', m.category)}
+          ${row('System', capitalize(m.ayurvedic_allopathic))}
+          ${row('Manufacturer', m.manufacturer)}
+          ${row('Used For', m.usage_purpose)}
+          ${row('Side Effects', m.side_effects)}
+          ${row('Precautions', m.precautions)}
+          ${row('Interactions', m.interaction_warnings)}
+          ${row('Storage', m.storage_instructions)}
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <button class="btn-primary" onclick="closeModal('medDetailModal');document.getElementById('addMedSearch').value='${m.medicine_name}';searchForAdd();openAddMedModal()">+ Add to My Medicines</button>
+          <button class="btn-secondary" onclick="closeModal('medDetailModal')">Close</button>
+        </div>`;
+
+      openModal('medDetailModal');
+    } catch(e) { toast('Could not load medicine details','error'); }
+  }
+
+  function row(label, value) {
+    if(!value) return '';
+    return `<div class="detail-row"><div class="detail-label">${label}</div><div class="detail-value">${value}</div></div>`;
+  }
+  function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+  // ── ADD MY MEDICINE ──
+  function openAddMedModal() {
+    document.getElementById('addMedSearch').value='';
+    document.getElementById('addMedSearchResults').innerHTML='';
+    document.getElementById('addMedForm').style.display='none';
+    document.getElementById('selectedMedId').value='';
+    document.getElementById('fStartDate').value = new Date().toISOString().split('T')[0];
+    openModal('addMedModal');
+  }
+
+  async function searchForAdd() {
+    const q = document.getElementById('addMedSearch').value.trim();
+    if(!q) return;
+    const results = await(await fetch(`/api/med/catalogue/search?q=${encodeURIComponent(q)}`)).json();
+    const el = document.getElementById('addMedSearchResults');
+    if(!results.length){ el.innerHTML='<div style="font-size:13px;color:var(--muted);padding:8px">No results found</div>'; return; }
+    el.innerHTML = results.slice(0,6).map(m=>
+      `<div onclick="selectMedForAdd(${m.id},'${m.medicine_name.replace(/'/g,"\\'")}','${m.generic_name.replace(/'/g,"\\'")}','${m.dosage||''}')"
+        style="padding:10px 12px;border-radius:8px;cursor:pointer;background:var(--card2);border:1px solid var(--border);margin-bottom:6px;transition:all 0.2s"
+        onmouseover="this.style.borderColor='rgba(0,229,255,0.3)'" onmouseout="this.style.borderColor='rgba(0,229,255,0.1)'">
+        <div style="font-weight:600;font-size:13px">${m.medicine_name}</div>
+        <div style="font-size:11px;color:var(--muted)">${m.generic_name}</div>
+      </div>`
+    ).join('');
+  }
+
+  function selectMedForAdd(id, name, generic, dosage) {
+    document.getElementById('selectedMedId').value = id;
+    document.getElementById('selectedMedName').textContent = name;
+    document.getElementById('selectedMedGeneric').textContent = generic;
+    document.getElementById('fDosage').value = dosage||'';
+    document.getElementById('addMedSearchResults').innerHTML='';
+    document.getElementById('addMedForm').style.display='block';
+    updateTimeInputs();
+  }
+
+  function updateTimeInputs() {
+    const freq = document.getElementById('fFrequency').value;
+    const countMap = {'Once daily':1,'Twice daily':2,'Three times daily':3,'Four times daily':4};
+    const count = countMap[freq]||1;
+    const defaults = ['08:00','13:00','18:00','22:00'];
+    const wrap = document.getElementById('timeInputsWrap');
+    wrap.innerHTML = Array.from({length:count},(_,i)=>
+      `<input class="time-input" type="time" id="time${i}" value="${defaults[i]||'08:00'}" />`
+    ).join('');
+  }
+
+  async function saveMyMedicine() {
+    const catId   = document.getElementById('selectedMedId').value;
+    const dosage  = document.getElementById('fDosage').value.trim();
+    const freq    = document.getElementById('fFrequency').value;
+    const start   = document.getElementById('fStartDate').value;
+
+    if(!dosage||!start){ toast('Please fill dosage and start date','error'); return; }
+
+    const freq_count = {'Once daily':1,'Twice daily':2,'Three times daily':3,'Four times daily':4};
+    const count = freq_count[freq]||1;
+    const times = Array.from({length:count},(_,i)=>document.getElementById(`time${i}`)?.value||'08:00');
+
+    const body = {
+      catalogue_id:    catId ? parseInt(catId) : null,
+      dosage_amount:   dosage,
+      frequency:       freq,
+      times_per_day:   count,
+      meal_timing:     document.getElementById('fMealTiming').value,
+      start_date:      start,
+      end_date:        document.getElementById('fEndDate').value||null,
+      prescribed_by:   document.getElementById('fPrescribedBy').value,
+      notes:           document.getElementById('fNotes').value,
+      total_quantity:  document.getElementById('fQty').value ? parseInt(document.getElementById('fQty').value) : null,
+      refill_alert_at: 5,
+      expiry_date:     document.getElementById('fExpiry').value||null,
+      schedule_times:  times,
+    };
+
+    try {
+      const res = await fetch('/api/med/my-medicines', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if(data.success) {
+        toast('✅ Medicine added successfully!','success');
+        closeModal('addMedModal');
+        loadMyMeds(); loadToday(); loadAlerts();
+      } else {
+        toast(data.error||'Failed to save','error');
+      }
+    } catch(e){ toast('Error saving medicine','error'); }
+  }
+
+  // ── EDIT MY MEDICINE ──
+  function openEditModal(m) {
+    document.getElementById('editMedId').value = m.id;
+    document.getElementById('eName').value     = m.custom_name || m.cat_name || '';
+    document.getElementById('eDosage').value   = m.dosage_amount || '';
+    document.getElementById('eFrequency').value= m.frequency || 'Once daily';
+    document.getElementById('eMealTiming').value = m.meal_timing || 'any';
+    document.getElementById('eEndDate').value  = m.end_date || '';
+    document.getElementById('eQty').value      = m.remaining_qty || '';
+    document.getElementById('eExpiry').value   = m.expiry_date || '';
+    document.getElementById('ePrescribedBy').value = m.prescribed_by || '';
+    document.getElementById('eNotes').value    = m.notes || '';
+    openModal('editMedModal');
+  }
+
+  async function saveEditMedicine() {
+    const id = document.getElementById('editMedId').value;
+    const body = {
+      custom_name:  document.getElementById('eName').value,
+      dosage_amount: document.getElementById('eDosage').value,
+      frequency:    document.getElementById('eFrequency').value,
+      meal_timing:  document.getElementById('eMealTiming').value,
+      end_date:     document.getElementById('eEndDate').value||null,
+      remaining_qty: document.getElementById('eQty').value ? parseInt(document.getElementById('eQty').value) : null,
+      expiry_date:  document.getElementById('eExpiry').value||null,
+      prescribed_by: document.getElementById('ePrescribedBy').value,
+      notes:        document.getElementById('eNotes').value,
+    };
+    try {
+      await fetch(`/api/med/my-medicines/${id}`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      toast('✅ Medicine updated!','success');
+      closeModal('editMedModal');
+      loadMyMeds(); loadAlerts();
+    } catch(e){ toast('Failed to update','error'); }
+  }
+
+  // ── INTERACTIONS ──
+  async function searchInteractionMed() {
+    const q = document.getElementById('intSearchQ').value.trim();
+    if(!q) return;
+    const results = await(await fetch(`/api/med/catalogue/search?q=${encodeURIComponent(q)}`)).json();
+    const el = document.getElementById('intSearchResults');
+    if(!results.length){ el.innerHTML='<div style="font-size:13px;color:var(--muted)">No results found</div>'; return; }
+    el.innerHTML = results.slice(0,5).map(m=>
+      `<div onclick="addToInteraction(${m.id},'${m.medicine_name.replace(/'/g,"\\'")}')"
+        style="padding:8px 12px;border-radius:8px;cursor:pointer;background:var(--card2);border:1px solid var(--border);margin-bottom:6px;font-size:13px;display:flex;justify-content:space-between;align-items:center"
+        onmouseover="this.style.borderColor='rgba(0,229,255,0.3)'" onmouseout="this.style.borderColor='rgba(0,229,255,0.1)'">
+        <span>${m.medicine_name}</span><span style="color:var(--accent);font-size:11px">+ Add</span>
+      </div>`
+    ).join('');
+  }
+
+  function addToInteraction(id, name) {
+    if(intSelectedMeds.find(m=>m.id===id)) { toast('Already added','warning'); return; }
+    intSelectedMeds.push({id, name});
+    renderIntSelected();
+    document.getElementById('intSearchQ').value='';
+    document.getElementById('intSearchResults').innerHTML='';
+  }
+
+  function removeFromInteraction(id) {
+    intSelectedMeds = intSelectedMeds.filter(m=>m.id!==id);
+    renderIntSelected();
+  }
+
+  function renderIntSelected() {
+    const el = document.getElementById('intSelected');
+    if(!intSelectedMeds.length) {
+      el.innerHTML='<span style="color:var(--muted);font-size:13px">No medicines selected yet...</span>';
+      return;
+    }
+    el.innerHTML = intSelectedMeds.map(m=>
+      `<div class="int-tag">${m.name}<button onclick="removeFromInteraction(${m.id})">×</button></div>`
+    ).join('');
+  }
+
+  async function checkInteractions() {
+    if(intSelectedMeds.length < 2){ toast('Select at least 2 medicines','warning'); return; }
+    const ids = intSelectedMeds.map(m=>m.id);
+    try {
+      const data = await(await fetch('/api/med/interactions',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({medicine_ids: ids})
+      })).json();
+
+      const el = document.getElementById('interactionResults');
+      if(!data.interactions.length) {
+        el.innerHTML = `<div style="padding:20px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);border-radius:14px;color:var(--accent2)">
+          ✅ <strong>No known interactions</strong> found between the selected medicines.
+          Always consult your doctor when combining medications.
+        </div>`;
+        return;
+      }
+
+      if(data.has_severe) toast('⚠️ Severe interactions found! See below.','error');
+
+      el.innerHTML = `<div style="font-size:14px;color:var(--muted);margin-bottom:12px">${data.count} interaction(s) found:</div>` +
+        data.interactions.map(r=>`
+          <div class="interaction-result ${r.severity}">
+            <div class="ir-header">
+              <div class="severity-dot ${r.severity}"></div>
+              ${r.med_a_name} + ${r.med_b_name}
+              <span style="margin-left:auto;font-size:12px;text-transform:uppercase;letter-spacing:1px">${r.severity}</span>
+            </div>
+            <div style="font-size:13px">${r.description}</div>
+            <div class="ir-advice">💡 ${r.advice}</div>
+          </div>`
+        ).join('');
+    } catch(e){ toast('Failed to check interactions','error'); }
+  }
+
+  // ── ADHERENCE ──
+  async function loadAdherence() {
+    try {
+      const data = await(await fetch('/api/med/adherence?days=30')).json();
+      document.getElementById('adherencePct').textContent = data.percentage + '%';
+      document.getElementById('adhTaken').textContent  = data.taken;
+      document.getElementById('adhMissed').textContent = data.missed;
+      document.getElementById('adhTotal').textContent  = data.total;
+
+      // Ring animation
+      const ring = document.getElementById('adherenceRing');
+      const circumference = 314;
+      const offset = circumference - (data.percentage / 100) * circumference;
+      setTimeout(() => ring.style.strokeDashoffset = offset, 100);
+
+      // Per medicine
+      const el = document.getElementById('perMedAdh');
+      if(!data.by_medicine.length) {
+        el.innerHTML='<div class="loading-text">No dose history yet. Start logging your doses.</div>';
+        return;
+      }
+      el.innerHTML = data.by_medicine.map(m => {
+        const pct = m.total>0 ? Math.round((m.taken/m.total)*100) : 0;
+        const color = pct>=80?'var(--accent2)':pct>=50?'var(--accent4)':'var(--accent3)';
+        return `<div class="med-adh-row">
+          <div style="min-width:160px;font-size:13px;font-weight:500">${m.name}</div>
+          <div class="med-adh-bar"><div class="med-adh-fill" style="width:${pct}%;background:${color}"></div></div>
+          <div style="min-width:50px;text-align:right;font-size:13px;font-weight:700;color:${color}">${pct}%</div>
+          <div style="min-width:100px;font-size:11px;color:var(--muted);text-align:right">${m.taken}/${m.total} taken</div>
+        </div>`;
+      }).join('');
+    } catch(e){ toast('Failed to load adherence','error'); }
+  }
+
+  // ── REPORT ──
+  async function loadReport() {
+    try {
+      const r = await(await fetch('/api/med/report')).json();
+      const el = document.getElementById('reportContent');
+
+      const medRows = r.active_medicines.map(m=>`
+        <div class="report-med-row">
+          <div>
+            <div style="font-weight:600;font-size:14px">💊 ${m.name}</div>
+            <div style="font-size:12px;color:var(--muted)">${m.dosage_amount} · ${m.frequency} · ${m.meal_timing||''}</div>
+            ${m.prescribed_by?`<div style="font-size:11px;color:var(--muted)">Dr. ${m.prescribed_by}</div>`:''}
+          </div>
+          <div style="text-align:right;font-size:12px;color:var(--muted)">
+            ${m.start_date?'From '+m.start_date:''}
+            ${m.end_date?'<br>Till '+m.end_date:''}
+          </div>
+        </div>`).join('') || '<div style="color:var(--muted);font-size:13px">No active medicines</div>';
+
+      const refillRows = r.refill_alerts.map(a=>`
+        <div class="report-alert-row">⚠️ <strong>${a.name}</strong> — only ${a.remaining_qty} tablets remaining</div>`
+      ).join('') || '<div style="color:var(--accent2);font-size:13px">✅ No refill alerts</div>';
+
+      const expiryRows = r.expiry_alerts.map(a=>`
+        <div class="report-alert-row">⏳ <strong>${a.name}</strong> — expires ${a.expiry_date}</div>`
+      ).join('') || '<div style="color:var(--accent2);font-size:13px">✅ No expiry alerts</div>';
+
+      const adh = r.adherence;
+      const pctColor = adh.percentage>=80?'var(--accent2)':adh.percentage>=50?'var(--accent4)':'var(--accent3)';
+
+      el.innerHTML = `
+        <div class="report-section">
+          <h3>📋 Report Info</h3>
+          <div class="detail-row"><div class="detail-label">Generated</div><div class="detail-value">${r.generated_at}</div></div>
+          <div class="detail-row"><div class="detail-label">Active Medicines</div><div class="detail-value">${r.active_medicines.length}</div></div>
+        </div>
+        <div class="report-section">
+          <h3>💊 Current Medicines</h3>${medRows}
+        </div>
+        <div class="report-section">
+          <h3>📊 30-Day Compliance</h3>
+          <div class="detail-row"><div class="detail-label">Adherence</div><div class="detail-value" style="font-family:Syne,sans-serif;font-size:24px;font-weight:800;color:${pctColor}">${adh.percentage}%</div></div>
+          <div class="detail-row"><div class="detail-label">Doses Taken</div><div class="detail-value">${adh.taken} of ${adh.total}</div></div>
+        </div>
+        <div class="report-section">
+          <h3>⚠️ Refill Alerts</h3>${refillRows}
+        </div>
+        <div class="report-section">
+          <h3>⏳ Expiry Alerts</h3>${expiryRows}
+        </div>`;
+    } catch(e){ document.getElementById('reportContent').innerHTML='<div class="loading-text">Failed to load report.</div>'; }
+  }
+
+  // ── Modal helpers ──
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(o=>{
+    o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
+  });
+
+  // ── Keyboard ──
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
+  });
+
+  // ── Boot ──
+  loadUser();
+  loadAlerts();
+  loadToday();
+  doSearch();
+</script>
+</body>
+</html>

@@ -26,7 +26,7 @@ app.register_blueprint(medication_bp)
 # ─────────────────────────────────────────
 CLIENT_ID     = os.environ.get("GOOGLE_CLIENT_ID", "")
 CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
-REDIRECT_URI  = "http://localhost:5000/callback"
+REDIRECT_URI = os.environ.get("REDIRECT_URI", "http://localhost:5000/callback")
 
 SCOPES = [
     "https://www.googleapis.com/auth/fitness.activity.read",

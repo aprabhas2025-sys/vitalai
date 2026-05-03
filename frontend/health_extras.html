@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VitalAI — Health Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#050d1a;--surface:#0a1628;--card:#0f1f38;--card2:#0c1a30;
+      --accent:#00e5ff;--accent2:#00ff88;--accent3:#ff6b6b;--accent4:#ffb347;
+      --purple:#a78bfa;--text:#e8f4f8;--muted:#7a9bb5;--border:rgba(0,229,255,0.1);
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:grid;grid-template-columns:260px 1fr;grid-template-rows:auto 1fr}
+
+    .sidebar{grid-row:1/-1;background:var(--surface);border-right:1px solid var(--border);padding:28px 20px;display:flex;flex-direction:column;gap:4px;height:100vh;position:sticky;top:0;overflow-y:auto}
+    .logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);padding:0 12px 24px;border-bottom:1px solid var(--border);margin-bottom:12px}
+    .logo span{color:var(--accent2)}
+    .user-pill{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+    .user-pill img{width:36px;height:36px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
+    .user-name{font-size:13px;font-weight:500}
+    .user-email{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;cursor:pointer;font-size:14px;color:var(--muted);transition:all 0.2s;text-decoration:none;border:none;background:none;width:100%;text-align:left}
+    .nav-item:hover{background:rgba(0,229,255,0.06);color:var(--text)}
+    .nav-item.active{background:rgba(0,229,255,0.1);color:var(--text);border-left:3px solid var(--accent)}
+    .nav-item .icon{font-size:18px;width:24px;text-align:center}
+    .sidebar-footer{margin-top:auto;padding-top:16px;border-top:1px solid var(--border)}
+    .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:var(--accent3);font-size:14px;cursor:pointer;text-decoration:none;transition:background 0.2s}
+    .logout-btn:hover{background:rgba(255,107,107,0.08)}
+
+    .topbar{grid-column:2;background:var(--surface);border-bottom:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .topbar-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700}
+    main{grid-column:2;padding:28px 32px;overflow-y:auto}
+
+    .tab-bar{display:flex;gap:6px;margin-bottom:28px;background:var(--card);padding:6px;border-radius:14px;border:1px solid var(--border);flex-wrap:wrap}
+    .tab-btn{padding:9px 16px;border-radius:10px;border:none;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+    .tab-btn:hover{color:var(--text)}
+    .tab-btn.active{background:var(--accent);color:#050d1a;font-weight:700}
+    .tab-pane{display:none}
+    .tab-pane.active{display:block}
+
+    .panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin-bottom:20px}
+    .panel-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+    .section-heading{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:20px}
+
+    /* Forms */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group.full{grid-column:1/-1}
+    .form-label{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+    .form-input,.form-select,.form-textarea{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;width:100%}
+    .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:rgba(0,229,255,0.4)}
+    .form-textarea{resize:vertical;min-height:70px}
+    .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:11px 24px;color:#050d1a;font-weight:700;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;transition:opacity 0.2s}
+    .btn-primary:hover{opacity:0.85}
+    .btn-secondary{background:transparent;border:1px solid var(--border);border-radius:10px;padding:11px 20px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all 0.2s}
+    .btn-secondary:hover{background:rgba(255,255,255,0.05)}
+    .btn-sm{padding:6px 14px;font-size:12px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
+    .btn-danger{background:rgba(255,107,107,0.1);color:var(--accent3);border:1px solid rgba(255,107,107,0.3)}
+    .btn-danger:hover{background:rgba(255,107,107,0.2)}
+
+    /* Cards */
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px}
+    .info-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px}
+    .info-card .ic-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .info-card .ic-title{font-weight:700;font-size:14px}
+    .info-card .ic-sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .info-card .ic-actions{display:flex;gap:6px}
+
+    /* Nutrition */
+    .meal-section{margin-bottom:20px}
+    .meal-header{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+    .food-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
+    .food-name{font-size:13px;font-weight:500}
+    .food-cals{font-size:12px;color:var(--accent4);font-weight:700}
+    .food-macros{font-size:11px;color:var(--muted);margin-top:2px}
+    .nutrition-totals{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+    .nt-stat{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+    .nt-stat .val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800}
+    .nt-stat .lbl{font-size:11px;color:var(--muted);margin-top:4px}
+    .cal-bar-wrap{margin-bottom:20px}
+    .cal-bar{height:12px;background:rgba(255,255,255,0.06);border-radius:6px;overflow:hidden;margin-top:8px}
+    .cal-fill{height:100%;border-radius:6px;transition:width 1s ease}
+
+    /* Food search */
+    .food-search-results{max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin-top:8px}
+    .food-result-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.2s;display:flex;justify-content:space-between;align-items:center}
+    .food-result-item:hover{background:rgba(0,229,255,0.06)}
+    .food-result-item:last-child{border:none}
+
+    /* Medical history */
+    .history-item{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px}
+    .hi-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .hi-title{font-weight:600;font-size:14px}
+    .hi-meta{font-size:12px;color:var(--muted);margin-top:3px}
+    .severity-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600}
+    .severity-badge.mild{background:rgba(0,229,255,0.1);color:var(--accent)}
+    .severity-badge.moderate{background:rgba(255,179,71,0.1);color:var(--accent4)}
+    .severity-badge.severe{background:rgba(255,107,107,0.1);color:var(--accent3)}
+    .severity-badge.resolved{background:rgba(0,255,136,0.1);color:var(--accent2)}
+    .ongoing-badge{background:rgba(255,107,107,0.1);color:var(--accent3);border:1px solid rgba(255,107,107,0.3);padding:3px 10px;border-radius:50px;font-size:11px;margin-left:8px}
+
+    /* Insurance */
+    .insurance-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+    .insurance-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+    .ins-provider{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px}
+    .ins-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+    .ins-meta-item .key{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+    .ins-meta-item .val{font-size:14px;font-weight:600;margin-top:2px}
+    .expiry-warn{background:rgba(255,179,71,0.1);border:1px solid rgba(255,179,71,0.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--accent4);margin-top:10px}
+
+    /* Family */
+    .family-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
+    .fc-avatar{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+    .fc-name{font-weight:700;font-size:15px}
+    .fc-relation{font-size:12px;color:var(--accent);margin-top:2px}
+    .fc-details{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+    .fc-actions{margin-left:auto;display:flex;gap:6px;flex-shrink:0}
+
+    /* Doctors */
+    .doctor-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start}
+    .dc-avatar{width:46px;height:46px;border-radius:50%;background:rgba(0,229,255,0.1);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .dc-name{font-weight:700;font-size:15px}
+    .dc-spec{font-size:12px;color:var(--accent);margin-top:2px}
+    .dc-meta{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+    .primary-badge{background:rgba(0,255,136,0.1);color:var(--accent2);border:1px solid rgba(0,255,136,0.3);padding:2px 8px;border-radius:50px;font-size:10px;margin-left:6px}
+
+    /* Platform links */
+    .platform-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
+    .platform-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:20px;text-decoration:none;color:var(--text);display:flex;align-items:center;gap:14px;transition:all 0.2s}
+    .platform-card:hover{border-color:rgba(0,229,255,0.3);transform:translateY(-2px)}
+    .platform-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+    .platform-name{font-weight:700;font-size:15px;margin-bottom:3px}
+    .platform-desc{font-size:12px;color:var(--muted)}
+
+    /* Goals */
+    .goal-item{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:10px}
+    .goal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .goal-name{font-weight:600;font-size:14px}
+    .goal-pct{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--accent2)}
+    .goal-bar{height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
+    .goal-fill{height:100%;border-radius:4px;transition:width 1s ease;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+    .goal-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+
+    /* Preferences */
+    .pref-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;position:relative}
+    .modal h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:24px}
+    .modal-close{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;border-radius:6px;padding:4px}
+    .modal-close:hover{color:var(--text)}
+
+    /* Toast */
+    #toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:13px;z-index:9999;display:none;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+
+    .empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+    .empty-state .es-icon{font-size:48px;margin-bottom:12px}
+    .loading-text{color:var(--muted);font-size:14px;padding:20px;text-align:center}
+    .search-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+    .search-input{flex:1;min-width:180px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s}
+    .search-input:focus{border-color:rgba(0,229,255,0.4)}
+    .search-input::placeholder{color:var(--muted)}
+    .search-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:11px 22px;color:#050d1a;font-weight:700;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif}
+
+    @media(max-width:900px){
+      .form-grid,.pref-grid{grid-template-columns:1fr}
+      .nutrition-totals{grid-template-columns:repeat(3,1fr)}
+      .platform-grid,.ins-meta{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">Vital<span>AI</span></div>
+  <div class="user-pill">
+    <img id="userAvatar" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><rect width='36' height='36' fill='%2300e5ff'/><text x='18' y='24' font-size='16' text-anchor='middle' fill='%23050d1a'>U</text></svg>" alt="">
+    <div><div class="user-name" id="userName">Loading...</div><div class="user-email" id="userEmail">—</div></div>
+  </div>
+  <a class="nav-item" href="/dashboard"><span class="icon">📊</span> Dashboard</a>
+  <a class="nav-item" href="/dashboard"><span class="icon">🏃</span> Activity</a>
+  <a class="nav-item" href="/dashboard"><span class="icon">❤️</span> Heart Rate</a>
+  <a class="nav-item" href="/dashboard"><span class="icon">😴</span> Sleep</a>
+  <a class="nav-item" href="/dashboard"><span class="icon">🤖</span> AI Assistant</a>
+  <a class="nav-item" href="/medications"><span class="icon">💊</span> Medications</a>
+  <a class="nav-item active" href="/health-extras"><span class="icon">🏥</span> Health Manager</a>
+  <a class="nav-item" href="/dashboard"><span class="icon">⚙️</span> Settings</a>
+  <div class="sidebar-footer"><a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a></div>
+</aside>
+
+<header class="topbar">
+  <div>
+    <div class="topbar-title" id="topbarTitle">🏥 Health Manager</div>
+    <div style="font-size:12px;color:var(--muted)">Indian Personal Health Assistant</div>
+  </div>
+</header>
+
+<main>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('nutrition',this)">🥗 Diet & Nutrition</button>
+    <button class="tab-btn" onclick="switchTab('goals',this)">🎯 Wellness Goals</button>
+    <button class="tab-btn" onclick="switchTab('history',this)">📋 Medical History</button>
+    <button class="tab-btn" onclick="switchTab('insurance',this)">🛡️ Insurance</button>
+    <button class="tab-btn" onclick="switchTab('family',this)">👨‍👩‍👧 Family Health</button>
+    <button class="tab-btn" onclick="switchTab('doctors',this)">🩺 My Doctors</button>
+    <button class="tab-btn" onclick="switchTab('platforms',this)">🔗 1mg & Practo</button>
+    <button class="tab-btn" onclick="switchTab('preferences',this)">⚙️ Preferences</button>
+  </div>
+
+  <!-- ══ NUTRITION ══ -->
+  <div class="tab-pane active" id="pane-nutrition">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="section-heading" style="margin:0">🥗 Indian Diet Tracker</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input type="date" id="nutritionDate" class="form-input" style="width:160px" onchange="loadNutrition()"/>
+        <button class="btn-primary" onclick="openModal('addFoodModal')">+ Add Food</button>
+      </div>
+    </div>
+
+    <div class="nutrition-totals" id="nutritionTotals">
+      <div class="nt-stat"><div class="val" id="ntCal" style="color:var(--accent4)">0</div><div class="lbl">Calories</div></div>
+      <div class="nt-stat"><div class="val" id="ntProtein" style="color:var(--accent)">0g</div><div class="lbl">Protein</div></div>
+      <div class="nt-stat"><div class="val" id="ntCarbs" style="color:var(--accent2)">0g</div><div class="lbl">Carbs</div></div>
+      <div class="nt-stat"><div class="val" id="ntFat" style="color:var(--purple)">0g</div><div class="lbl">Fat</div></div>
+      <div class="nt-stat"><div class="val" id="ntFiber" style="color:var(--accent3)">0g</div><div class="lbl">Fiber</div></div>
+    </div>
+
+    <div class="cal-bar-wrap panel">
+      <div style="display:flex;justify-content:space-between;font-size:13px">
+        <span>Daily Calorie Goal</span>
+        <span id="calGoalText" style="color:var(--accent4)">0 / 2000 kcal</span>
+      </div>
+      <div class="cal-bar"><div class="cal-fill" id="calGoalBar" style="width:0%;background:linear-gradient(90deg,var(--accent4),#ffe082)"></div></div>
+      <div style="display:flex;gap:20px;margin-top:12px;font-size:12px;color:var(--muted)">
+        <span>🟦 Protein goal: 50g/day</span>
+        <span>🟩 Carbs goal: 250g/day</span>
+        <span>🟪 Fat goal: 65g/day</span>
+      </div>
+    </div>
+
+    <div id="mealSections"><div class="loading-text">Loading today's meals...</div></div>
+  </div>
+
+  <!-- ══ GOALS ══ -->
+  <div class="tab-pane" id="pane-goals">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="section-heading" style="margin:0">🎯 Wellness Goals</div>
+      <button class="btn-primary" onclick="openModal('addGoalModal')">+ Add Goal</button>
+    </div>
+    <div id="goalsList"><div class="loading-text">Loading goals...</div></div>
+  </div>
+
+  <!-- ══ MEDICAL HISTORY ══ -->
+  <div class="tab-pane" id="pane-history">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="section-heading" style="margin:0">📋 Medical History</div>
+      <button class="btn-primary" onclick="openModal('addHistoryModal')">+ Add Record</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn-sm btn-secondary history-filter-btn" data-filter="" onclick="loadHistory('')" style="background:rgba(0,229,255,0.1);color:var(--accent);border-color:rgba(0,229,255,0.3)">All</button>
+      <button class="btn-sm btn-secondary history-filter-btn" data-filter="condition" onclick="loadHistory('condition')">🫀 Conditions</button>
+      <button class="btn-sm btn-secondary history-filter-btn" data-filter="surgery" onclick="loadHistory('surgery')">🔪 Surgeries</button>
+      <button class="btn-sm btn-secondary history-filter-btn" data-filter="allergy" onclick="loadHistory('allergy')">⚠️ Allergies</button>
+      <button class="btn-sm btn-secondary history-filter-btn" data-filter="vaccination" onclick="loadHistory('vaccination')">💉 Vaccinations</button>
+      <button class="btn-sm btn-secondary history-filter-btn" data-filter="test" onclick="loadHistory('test')">🧪 Tests</button>
+      <button class="btn-sm btn-secondary history-filter-btn" data-filter="hospitalization" onclick="loadHistory('hospitalization')">🏥 Hospitalization</button>
+    </div>
+    <div id="historyList"><div class="loading-text">Loading records...</div></div>
+  </div>
+
+  <!-- ══ INSURANCE ══ -->
+  <div class="tab-pane" id="pane-insurance">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="section-heading" style="margin:0">🛡️ Health Insurance</div>
+      <button class="btn-primary" onclick="openModal('addInsuranceModal')">+ Add Policy</button>
+    </div>
+    <div id="insuranceList"><div class="loading-text">Loading policies...</div></div>
+
+    <div class="panel" style="margin-top:20px">
+      <div class="panel-title">📞 Insurance Helplines</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+        ${["Star Health: 1800-425-2255","Niva Bupa: 1800-3010-3333","Care Health: 1800-102-4488",
+           "HDFC ERGO: 1800-2700-700","New India: 1800-209-1415","Bajaj Allianz: 1800-209-5858"].map(h=>
+          `<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px">${h}</div>`
+        ).join('')}
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FAMILY ══ -->
+  <div class="tab-pane" id="pane-family">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="section-heading" style="margin:0">👨‍👩‍👧 Family Health Monitor</div>
+      <button class="btn-primary" onclick="openModal('addFamilyModal')">+ Add Member</button>
+    </div>
+    <div id="familyList"><div class="loading-text">Loading family members...</div></div>
+  </div>
+
+  <!-- ══ DOCTORS ══ -->
+  <div class="tab-pane" id="pane-doctors">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="section-heading" style="margin:0">🩺 My Doctor Network</div>
+      <button class="btn-primary" onclick="openModal('addDoctorModal')">+ Add Doctor</button>
+    </div>
+    <div id="doctorsList"><div class="loading-text">Loading doctors...</div></div>
+  </div>
+
+  <!-- ══ PLATFORMS ══ -->
+  <div class="tab-pane" id="pane-platforms">
+    <div class="section-heading">🔗 Indian Health Platforms</div>
+
+    <div class="search-row">
+      <input class="search-input" id="platformSearch" placeholder="Search medicine, doctor, test..."/>
+      <select class="form-select" id="platformCity" style="width:160px">
+        <option>Bengaluru</option><option>Mumbai</option><option>Delhi</option>
+        <option>Chennai</option><option>Hyderabad</option><option>Pune</option>
+        <option>Kolkata</option><option>Ahmedabad</option>
+      </select>
+      <button class="search-btn" onclick="searchPlatforms()">🔍 Search</button>
+    </div>
+
+    <div id="platformLinks" style="margin-bottom:24px"></div>
+
+    <div class="panel-title" style="margin-bottom:16px">🏥 Online Medicine & Doctor Platforms</div>
+    <div class="platform-grid">
+      <a class="platform-card" href="https://www.1mg.com" target="_blank">
+        <div class="platform-icon" style="background:rgba(255,59,59,0.1)">💊</div>
+        <div><div class="platform-name">1mg</div><div class="platform-desc">Order medicines, lab tests, consult doctors</div></div>
+      </a>
+      <a class="platform-card" href="https://www.practo.com" target="_blank">
+        <div class="platform-icon" style="background:rgba(0,180,100,0.1)">🩺</div>
+        <div><div class="platform-name">Practo</div><div class="platform-desc">Find doctors, book appointments, consult online</div></div>
+      </a>
+      <a class="platform-card" href="https://www.apollopharmacy.in" target="_blank">
+        <div class="platform-icon" style="background:rgba(0,100,255,0.1)">🏥</div>
+        <div><div class="platform-name">Apollo Pharmacy</div><div class="platform-desc">Medicines, health products, online consultation</div></div>
+      </a>
+      <a class="platform-card" href="https://www.netmeds.com" target="_blank">
+        <div class="platform-icon" style="background:rgba(0,200,150,0.1)">🌿</div>
+        <div><div class="platform-name">Netmeds</div><div class="platform-desc">Online pharmacy, genuine medicines delivered</div></div>
+      </a>
+      <a class="platform-card" href="https://www.thyrocare.com" target="_blank">
+        <div class="platform-icon" style="background:rgba(255,150,0,0.1)">🧪</div>
+        <div><div class="platform-name">Thyrocare</div><div class="platform-desc">Affordable lab tests, home sample collection</div></div>
+      </a>
+      <a class="platform-card" href="https://www.lalpathlabs.com" target="_blank">
+        <div class="platform-icon" style="background:rgba(200,0,200,0.1)">🔬</div>
+        <div><div class="platform-name">Lal PathLabs</div><div class="platform-desc">Diagnostic tests across India</div></div>
+      </a>
+      <a class="platform-card" href="https://www.ayush.gov.in" target="_blank">
+        <div class="platform-icon" style="background:rgba(0,200,100,0.1)">🌱</div>
+        <div><div class="platform-name">AYUSH Portal</div><div class="platform-desc">Official Ayurvedic, Yoga & Naturopathy resources</div></div>
+      </a>
+      <a class="platform-card" href="https://www.esic.in" target="_blank">
+        <div class="platform-icon" style="background:rgba(0,150,255,0.1)">🏛️</div>
+        <div><div class="platform-name">ESIC</div><div class="platform-desc">Employee State Insurance Corporation</div></div>
+      </a>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">🏥 Government Health Schemes</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">
+        <a href="https://pmjay.gov.in" target="_blank" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;text-decoration:none;color:var(--text);display:block;transition:all 0.2s" onmouseover="this.style.borderColor='rgba(0,229,255,0.3)'" onmouseout="this.style.borderColor='rgba(0,229,255,0.1)'">
+          <div style="font-weight:700;margin-bottom:4px">Ayushman Bharat (PMJAY)</div>
+          <div style="font-size:12px;color:var(--muted)">₹5 lakh health coverage for poor families</div>
+        </a>
+        <a href="https://www.irdai.gov.in" target="_blank" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;text-decoration:none;color:var(--text);display:block;transition:all 0.2s" onmouseover="this.style.borderColor='rgba(0,229,255,0.3)'" onmouseout="this.style.borderColor='rgba(0,229,255,0.1)'">
+          <div style="font-weight:700;margin-bottom:4px">IRDAI</div>
+          <div style="font-size:12px;color:var(--muted)">Insurance regulatory authority, file complaints</div>
+        </a>
+        <a href="https://mohfw.gov.in" target="_blank" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;text-decoration:none;color:var(--text);display:block;transition:all 0.2s" onmouseover="this.style.borderColor='rgba(0,229,255,0.3)'" onmouseout="this.style.borderColor='rgba(0,229,255,0.1)'">
+          <div style="font-weight:700;margin-bottom:4px">Ministry of Health</div>
+          <div style="font-size:12px;color:var(--muted)">Official health guidelines and policies</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PREFERENCES ══ -->
+  <div class="tab-pane" id="pane-preferences">
+    <div class="section-heading">⚙️ Health Preferences</div>
+    <div class="panel">
+      <div class="panel-title">🇮🇳 Regional & Dietary Preferences</div>
+      <div class="pref-grid">
+        <div class="form-group">
+          <label class="form-label">Diet Type</label>
+          <select class="form-select" id="prefDiet">
+            <option value="vegetarian">Vegetarian</option>
+            <option value="vegan">Vegan</option>
+            <option value="eggetarian">Eggetarian</option>
+            <option value="non-vegetarian">Non-Vegetarian</option>
+            <option value="jain">Jain</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">State</label>
+          <select class="form-select" id="prefState">
+            <option>Karnataka</option><option>Maharashtra</option><option>Tamil Nadu</option>
+            <option>Andhra Pradesh</option><option>Telangana</option><option>Kerala</option>
+            <option>Gujarat</option><option>Rajasthan</option><option>Punjab</option>
+            <option>Delhi</option><option>Uttar Pradesh</option><option>West Bengal</option>
+            <option>Madhya Pradesh</option><option>Bihar</option><option>Odisha</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">City</label>
+          <input class="form-input" id="prefCity" placeholder="Your city"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Blood Group</label>
+          <select class="form-select" id="prefBlood">
+            <option value="">Unknown</option>
+            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+            <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Daily Calorie Goal (kcal)</label>
+          <input class="form-input" type="number" id="prefCalGoal" placeholder="2000"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Daily Water Goal (litres)</label>
+          <input class="form-input" type="number" step="0.5" id="prefWaterGoal" placeholder="3"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Weight Goal (kg)</label>
+          <input class="form-input" type="number" id="prefWeightGoal" placeholder="70"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Known Allergies</label>
+          <input class="form-input" id="prefAllergies" placeholder="e.g. Penicillin, Peanuts"/>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="savePreferences()">💾 Save Preferences</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Add Food -->
+<div class="modal-overlay" id="addFoodModal">
+  <div class="modal" style="max-width:700px">
+    <button class="modal-close" onclick="closeModal('addFoodModal')">✕</button>
+    <h2>🥗 Add Food Entry</h2>
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label">Search Indian Food</label>
+      <input class="form-input" id="foodSearchInput" placeholder="e.g. Idli, Dal, Paratha..." oninput="searchFoods()"/>
+      <div class="food-search-results" id="foodSearchResults" style="display:none"></div>
+    </div>
+    <div id="foodEntryForm" style="display:none">
+      <div style="padding:12px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.2);border-radius:10px;margin-bottom:16px">
+        <div style="font-weight:700" id="selectedFoodName">—</div>
+        <div style="font-size:12px;color:var(--muted)" id="selectedFoodNutrition">—</div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Meal Type</label>
+          <select class="form-select" id="fMealType">
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+            <option value="snack">Snack</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity (servings)</label>
+          <input class="form-input" type="number" id="fQuantity" value="1" step="0.5" min="0.5"/>
+        </div>
+        <input type="hidden" id="fFoodData"/>
+      </div>
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="closeModal('addFoodModal')">Cancel</button>
+        <button class="btn-primary" onclick="addFoodEntry()">+ Add to Log</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Goal -->
+<div class="modal-overlay" id="addGoalModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addGoalModal')">✕</button>
+    <h2>🎯 Add Wellness Goal</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Goal Type</label>
+        <select class="form-select" id="gType">
+          <option value="fitness">Fitness</option><option value="nutrition">Nutrition</option>
+          <option value="weight">Weight</option><option value="sleep">Sleep</option>
+          <option value="hydration">Hydration</option><option value="mental">Mental Health</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Goal Name</label>
+        <input class="form-input" id="gName" placeholder="e.g. Walk 10,000 steps daily"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Value</label>
+        <input class="form-input" type="number" id="gTarget" placeholder="e.g. 10000"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unit</label>
+        <input class="form-input" id="gUnit" placeholder="e.g. steps, kg, hours"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Current Value</label>
+        <input class="form-input" type="number" id="gCurrent" placeholder="0"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deadline</label>
+        <input class="form-input" type="date" id="gDeadline"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="closeModal('addGoalModal')">Cancel</button>
+      <button class="btn-primary" onclick="addGoal()">💾 Add Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Medical History -->
+<div class="modal-overlay" id="addHistoryModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addHistoryModal')">✕</button>
+    <h2>📋 Add Medical Record</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Record Type</label>
+        <select class="form-select" id="hType">
+          <option value="condition">Condition / Disease</option>
+          <option value="surgery">Surgery / Procedure</option>
+          <option value="allergy">Allergy</option>
+          <option value="vaccination">Vaccination</option>
+          <option value="test">Lab Test / Report</option>
+          <option value="hospitalization">Hospitalization</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input class="form-input" id="hTitle" placeholder="e.g. Type 2 Diabetes, Appendectomy"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input class="form-input" type="date" id="hDate"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Severity</label>
+        <select class="form-select" id="hSeverity">
+          <option value="mild">Mild</option>
+          <option value="moderate">Moderate</option>
+          <option value="severe">Severe</option>
+          <option value="resolved">Resolved</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Doctor Name</label>
+        <input class="form-input" id="hDoctor" placeholder="Doctor's name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hospital / Clinic</label>
+        <input class="form-input" id="hHospital" placeholder="Hospital name"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" id="hDesc" placeholder="Details, treatment, notes..."></textarea>
+      </div>
+      <div class="form-group full" style="flex-direction:row;align-items:center;gap:10px">
+        <input type="checkbox" id="hOngoing" style="width:16px;height:16px"/>
+        <label for="hOngoing" style="font-size:13px">This condition is ongoing</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="closeModal('addHistoryModal')">Cancel</button>
+      <button class="btn-primary" onclick="addHistory()">💾 Save Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Insurance -->
+<div class="modal-overlay" id="addInsuranceModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addInsuranceModal')">✕</button>
+    <h2>🛡️ Add Insurance Policy</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Insurance Provider</label>
+        <select class="form-select" id="insProvider"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Policy Number</label>
+        <input class="form-input" id="insPolicy" placeholder="Policy number"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Policy Type</label>
+        <select class="form-select" id="insType">
+          <option>Individual Health</option><option>Family Floater</option>
+          <option>Group Health</option><option>Senior Citizen</option>
+          <option>Critical Illness</option><option>Top-up Plan</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sum Insured (₹)</label>
+        <input class="form-input" type="number" id="insSum" placeholder="500000"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Premium Amount (₹)</label>
+        <input class="form-input" type="number" id="insPremium" placeholder="15000"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Premium Frequency</label>
+        <select class="form-select" id="insFreq">
+          <option value="yearly">Yearly</option>
+          <option value="half-yearly">Half Yearly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Start Date</label>
+        <input class="form-input" type="date" id="insStart"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expiry Date</label>
+        <input class="form-input" type="date" id="insExpiry"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nominee Name</label>
+        <input class="form-input" id="insNominee" placeholder="Nominee's full name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contact Number</label>
+        <input class="form-input" id="insContact" placeholder="Insurer helpline"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Cashless Hospitals (comma separated)</label>
+        <textarea class="form-textarea" id="insCashless" placeholder="Apollo, Fortis, Manipal..."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="closeModal('addInsuranceModal')">Cancel</button>
+      <button class="btn-primary" onclick="addInsurance()">💾 Save Policy</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Family Member -->
+<div class="modal-overlay" id="addFamilyModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addFamilyModal')">✕</button>
+    <h2>👨‍👩‍👧 Add Family Member</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input class="form-input" id="fmName" placeholder="Member's name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Relation *</label>
+        <select class="form-select" id="fmRelation">
+          <option>Father</option><option>Mother</option><option>Spouse</option>
+          <option>Son</option><option>Daughter</option><option>Brother</option>
+          <option>Sister</option><option>Grandfather</option><option>Grandmother</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Age</label>
+        <input class="form-input" type="number" id="fmAge" placeholder="Age"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Blood Group</label>
+        <select class="form-select" id="fmBlood">
+          <option value="">Unknown</option>
+          <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+          <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input class="form-input" id="fmPhone" placeholder="Mobile number"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Known Conditions</label>
+        <input class="form-input" id="fmConditions" placeholder="e.g. Diabetes, BP"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Current Medicines</label>
+        <textarea class="form-textarea" id="fmMedicines" placeholder="List of medicines they take..."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="closeModal('addFamilyModal')">Cancel</button>
+      <button class="btn-primary" onclick="addFamilyMember()">💾 Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Doctor -->
+<div class="modal-overlay" id="addDoctorModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addDoctorModal')">✕</button>
+    <h2>🩺 Add Doctor</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Doctor Name *</label>
+        <input class="form-input" id="dcName" placeholder="Dr. Full Name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Specialty</label>
+        <select class="form-select" id="dcSpecialty"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hospital / Clinic</label>
+        <input class="form-input" id="dcHospital" placeholder="Hospital name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">City</label>
+        <select class="form-select" id="dcCity"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="form-input" id="dcPhone" placeholder="Contact number"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rating (1-5)</label>
+        <input class="form-input" type="number" id="dcRating" min="1" max="5" placeholder="5"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Address</label>
+        <textarea class="form-textarea" id="dcAddress" placeholder="Clinic address..."></textarea>
+      </div>
+      <div class="form-group full" style="flex-direction:row;align-items:center;gap:10px">
+        <input type="checkbox" id="dcPrimary" style="width:16px;height:16px"/>
+        <label for="dcPrimary" style="font-size:13px">Set as Primary Doctor</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="closeModal('addDoctorModal')">Cancel</button>
+      <button class="btn-primary" onclick="addDoctor()">💾 Add Doctor</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── Toast ──
+  function toast(msg, type='info') {
+    const t=document.getElementById('toast');
+    const c={info:'var(--accent)',success:'var(--accent2)',error:'var(--accent3)',warning:'var(--accent4)'};
+    t.innerHTML=`<span style="color:${c[type]}">●</span> ${msg}`;
+    t.style.display='flex'; t.style.alignItems='center'; t.style.gap='10px';
+    clearTimeout(window._tt);
+    window._tt=setTimeout(()=>t.style.display='none',3500);
+  }
+
+  // ── Modal with auto form reset ──
+  function openModal(id) {
+    // Reset the form inside this modal before opening
+    const modal = document.getElementById(id);
+    modal.querySelectorAll('input:not([type="checkbox"]):not([type="hidden"])').forEach(el => el.value = '');
+    modal.querySelectorAll('textarea').forEach(el => el.value = '');
+    modal.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+    modal.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+    // Reset any visible sub-sections
+    const foodForm = document.getElementById('foodEntryForm');
+    if(foodForm) foodForm.style.display = 'none';
+    const foodResults = document.getElementById('foodSearchResults');
+    if(foodResults) { foodResults.style.display = 'none'; foodResults.innerHTML = ''; }
+    const addMedResults = document.getElementById('addMedSearchResults');
+    if(addMedResults) addMedResults.innerHTML = '';
+    selectedFood = null;
+    modal.classList.add('open');
+  }
+  function closeModal(id){document.getElementById(id).classList.remove('open')}
+  document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'))});
+
+  // ── Tab switch ──
+  function switchTab(name,btn) {
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('pane-'+name).classList.add('active');
+    btn.classList.add('active');
+    const titles={nutrition:'🥗 Diet & Nutrition',goals:'🎯 Wellness Goals',history:'📋 Medical History',
+      insurance:'🛡️ Health Insurance',family:'👨‍👩‍👧 Family Health',doctors:'🩺 My Doctors',
+      platforms:'🔗 Indian Health Platforms',preferences:'⚙️ Preferences'};
+    document.getElementById('topbarTitle').textContent = titles[name]||'Health Manager';
+    if(name==='nutrition') loadNutrition();
+    if(name==='goals') loadGoals();
+    if(name==='history') loadHistory('');
+    if(name==='insurance') loadInsurance();
+    if(name==='family') loadFamily();
+    if(name==='doctors') loadDoctors();
+    if(name==='preferences') loadPreferences();
+  }
+
+  // ── User ──
+  async function loadUser() {
+    try{const d=await(await fetch('/api/status')).json();
+      if(d.user){
+        document.getElementById('userName').textContent=d.user.name||'User';
+        document.getElementById('userEmail').textContent=d.user.email||'';
+        if(d.user.picture)document.getElementById('userAvatar').src=d.user.picture;
+      }
+    }catch(e){}
+  }
+
+  // ══════════════════ NUTRITION ══════════════════
+  let selectedFood = null;
+
+  function initNutritionDate() {
+    const el = document.getElementById('nutritionDate');
+    if(!el.value) el.value = new Date().toISOString().split('T')[0];
+  }
+
+  async function loadNutrition() {
+    initNutritionDate();
+    const d = document.getElementById('nutritionDate').value;
+    try {
+      const [log, summary] = await Promise.all([
+        fetch(`/api/nutrition/log?date=${d}`).then(r=>r.json()),
+        fetch(`/api/nutrition/summary?date=${d}`).then(r=>r.json())
+      ]);
+
+      // Totals
+      const t = summary.totals || {};
+      document.getElementById('ntCal').textContent = Math.round(t.cal||0);
+      document.getElementById('ntProtein').textContent = Math.round(t.protein||0)+'g';
+      document.getElementById('ntCarbs').textContent = Math.round(t.carbs||0)+'g';
+      document.getElementById('ntFat').textContent = Math.round(t.fat||0)+'g';
+      document.getElementById('ntFiber').textContent = Math.round(t.fiber||0)+'g';
+
+      const calGoal = 2000;
+      const calPct = Math.min(((t.cal||0)/calGoal)*100,100);
+      document.getElementById('calGoalBar').style.width = calPct+'%';
+      document.getElementById('calGoalText').textContent = `${Math.round(t.cal||0)} / ${calGoal} kcal`;
+
+      // Meals
+      const mealIcons = {breakfast:'🌅',lunch:'☀️',dinner:'🌙',snack:'🍎',other:'🍽️'};
+      const mealOrder = ['breakfast','lunch','dinner','snack','other'];
+      const byMeal = {};
+      log.forEach(item => { if(!byMeal[item.meal_type]) byMeal[item.meal_type]=[]; byMeal[item.meal_type].push(item); });
+
+      const el = document.getElementById('mealSections');
+      if(!log.length) {
+        el.innerHTML = `<div class="empty-state"><div class="es-icon">🥗</div><div class="es-text">No meals logged yet.<br>Click "+ Add Food" to start tracking.</div></div>`;
+        return;
+      }
+
+      el.innerHTML = mealOrder.filter(m=>byMeal[m]).map(meal => `
+        <div class="meal-section">
+          <div class="meal-header">${mealIcons[meal]||'🍽️'} ${meal.charAt(0).toUpperCase()+meal.slice(1)}</div>
+          ${byMeal[meal].map(f=>`
+            <div class="food-item">
+              <div>
+                <div class="food-name">${f.food_name} ${f.quantity!=1?`(×${f.quantity})`:''}</div>
+                <div class="food-macros">P: ${Math.round(f.protein_g)}g · C: ${Math.round(f.carbs_g)}g · F: ${Math.round(f.fat_g)}g</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="food-cals">${Math.round(f.calories)} kcal</span>
+                <button class="btn-sm btn-danger" onclick="deleteFoodLog(${f.id})">✕</button>
+              </div>
+            </div>`).join('')}
+        </div>`).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  async function searchFoods() {
+    const q = document.getElementById('foodSearchInput').value.trim();
+    const el = document.getElementById('foodSearchResults');
+    if(!q){ el.style.display='none'; el.innerHTML=''; return; }
+    el.style.display='block';
+    el.innerHTML='<div style="padding:12px;color:var(--muted);font-size:13px">Searching...</div>';
+    try {
+      const results = await(await fetch(`/api/nutrition/foods/search?q=${encodeURIComponent(q)}`)).json();
+      if(!results.length){
+        el.innerHTML=`<div style="padding:14px;color:var(--muted);font-size:13px;text-align:center">
+          🔍 No results for "<strong>${q}</strong>"<br>
+          <span style="font-size:11px">Try: Idli, Dal, Rice, Roti, Chicken, Paneer, Dosa...</span>
+        </div>`;
+        return;
+      }
+      el.innerHTML = results.map(f=>`
+        <div class="food-result-item" onclick="selectFood(${JSON.stringify(f).replace(/"/g,'&quot;')})">
+          <div>
+            <div style="font-weight:600;font-size:13px">${f.name}</div>
+            <div style="font-size:11px;color:var(--muted)">${f.category} · P:${f.protein}g · C:${f.carbs}g · F:${f.fat}g</div>
+          </div>
+          <span style="color:var(--accent4);font-weight:700;font-size:13px">${f.calories} kcal</span>
+        </div>`).join('');
+    } catch(e) {
+      el.innerHTML='<div style="padding:12px;color:var(--accent3);font-size:13px">Search failed. Please try again.</div>';
+    }
+  }
+
+  function selectFood(f) {
+    selectedFood = f;
+    document.getElementById('selectedFoodName').textContent = f.name;
+    document.getElementById('selectedFoodNutrition').textContent =
+      `${f.calories} kcal · Protein: ${f.protein}g · Carbs: ${f.carbs}g · Fat: ${f.fat}g · Fiber: ${f.fiber}g`;
+    document.getElementById('foodSearchResults').style.display='none';
+    document.getElementById('foodEntryForm').style.display='block';
+  }
+
+  async function addFoodEntry() {
+    if(!selectedFood){ toast('Select a food first','warning'); return; }
+    const qty = parseFloat(document.getElementById('fQuantity').value)||1;
+    const mealType = document.getElementById('fMealType').value;
+    const logDate = document.getElementById('nutritionDate').value;
+    const body = {
+      log_date: logDate, meal_type: mealType,
+      food_name: selectedFood.name, quantity: qty, unit: 'serving',
+      calories: parseFloat((selectedFood.calories*qty).toFixed(1)),
+      protein_g: parseFloat((selectedFood.protein*qty).toFixed(1)),
+      carbs_g: parseFloat((selectedFood.carbs*qty).toFixed(1)),
+      fat_g: parseFloat((selectedFood.fat*qty).toFixed(1)),
+      fiber_g: parseFloat((selectedFood.fiber*qty).toFixed(1)),
+    };
+    try {
+      await fetch('/api/nutrition/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      toast('✅ '+selectedFood.name+' logged!','success');
+      // Full reset
+      selectedFood = null;
+      document.getElementById('foodSearchInput').value = '';
+      document.getElementById('foodSearchResults').style.display = 'none';
+      document.getElementById('foodSearchResults').innerHTML = '';
+      document.getElementById('foodEntryForm').style.display = 'none';
+      document.getElementById('fQuantity').value = '1';
+      closeModal('addFoodModal');
+      loadNutrition();
+    } catch(e) { toast('Failed to log food','error'); }
+  }
+
+  async function deleteFoodLog(id) {
+    await fetch(`/api/nutrition/log/${id}`,{method:'DELETE'});
+    toast('Removed','info');
+    loadNutrition();
+  }
+
+  // ══════════════════ GOALS ══════════════════
+  async function loadGoals() {
+    const goals = await(await fetch('/api/goals')).json();
+    const el = document.getElementById('goalsList');
+    if(!goals.length){
+      el.innerHTML=`<div class="empty-state"><div class="es-icon">🎯</div><div class="es-text">No goals yet. Add your first wellness goal!</div></div>`;
+      return;
+    }
+    el.innerHTML = goals.map(g=>{
+      const pct = g.target>0?Math.min(Math.round((g.current/g.target)*100),100):0;
+      const color = pct>=80?'var(--accent2)':pct>=50?'var(--accent4)':'var(--accent3)';
+      const typeIcons = {fitness:'🏃',nutrition:'🥗',weight:'⚖️',sleep:'😴',hydration:'💧',mental:'🧘',other:'🎯'};
+      return `<div class="goal-item">
+        <div class="goal-header">
+          <div>
+            <span style="font-size:18px">${typeIcons[g.goal_type]||'🎯'}</span>
+            <span class="goal-name" style="margin-left:8px">${g.goal_name}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="goal-pct" style="color:${color}">${pct}%</span>
+            <button class="btn-sm btn-danger" onclick="deleteGoal(${g.id})">✕</button>
+          </div>
+        </div>
+        <div class="goal-bar"><div class="goal-fill" style="width:${pct}%;background:linear-gradient(90deg,${color},${color}88)"></div></div>
+        <div class="goal-meta">
+          <span>${g.current} / ${g.target} ${g.unit}</span>
+          <span>${g.deadline?'Deadline: '+g.deadline:''}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function addGoal() {
+    const name=document.getElementById('gName').value.trim();
+    const target=document.getElementById('gTarget').value;
+    if(!name||!target){toast('Name and target required','error');return;}
+    try {
+      await fetch('/api/goals',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          goal_type:document.getElementById('gType').value,
+          goal_name:name,
+          target:parseFloat(target),
+          current:parseFloat(document.getElementById('gCurrent').value)||0,
+          unit:document.getElementById('gUnit').value,
+          deadline:document.getElementById('gDeadline').value
+        })});
+      toast('✅ Goal added!','success');
+      closeModal('addGoalModal');
+      loadGoals();
+    } catch(e) { toast('Failed to add goal','error'); }
+  }
+
+  async function deleteGoal(id) {
+    await fetch(`/api/goals/${id}`,{method:'DELETE'});
+    toast('Goal completed ✅','success'); loadGoals();
+  }
+
+  // ══════════════════ MEDICAL HISTORY ══════════════════
+  let currentHistoryFilter = '';
+
+  async function loadHistory(type='') {
+    currentHistoryFilter = type;
+    // Update active state on filter buttons
+    document.querySelectorAll('.history-filter-btn').forEach(btn => {
+      btn.classList.remove('active-filter');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--muted)';
+      btn.style.borderColor = 'var(--border)';
+    });
+    const activeBtn = document.querySelector(`.history-filter-btn[data-filter="${type}"]`);
+    if(activeBtn) {
+      activeBtn.style.background = 'rgba(0,229,255,0.1)';
+      activeBtn.style.color = 'var(--accent)';
+      activeBtn.style.borderColor = 'rgba(0,229,255,0.3)';
+    }
+
+    const url = '/api/medical-history'+(type?'?type='+type:'');
+    const el = document.getElementById('historyList');
+    el.innerHTML = '<div class="loading-text">Loading records...</div>';
+    try {
+      const records = await(await fetch(url)).json();
+      if(!records.length){
+        const typeLabel = type ? type.charAt(0).toUpperCase()+type.slice(1)+'s' : 'medical records';
+        el.innerHTML=`<div class="empty-state"><div class="es-icon">📋</div><div class="es-text">No ${typeLabel} found.<br>Click "+ Add Record" to add one.</div></div>`;
+        return;
+      }
+      const typeIcons={condition:'🫀',surgery:'🔪',allergy:'⚠️',vaccination:'💉',test:'🧪',hospitalization:'🏥',other:'📝'};
+      const typeBg={condition:'rgba(255,107,107,0.1)',surgery:'rgba(255,179,71,0.1)',allergy:'rgba(167,139,250,0.1)',
+        vaccination:'rgba(0,255,136,0.1)',test:'rgba(0,229,255,0.1)',hospitalization:'rgba(255,107,107,0.08)',other:'rgba(255,255,255,0.06)'};
+      const typeLabels={condition:'Condition',surgery:'Surgery',allergy:'Allergy',vaccination:'Vaccination',test:'Test',hospitalization:'Hospitalization',other:'Other'};
+      el.innerHTML = records.map(r=>`
+        <div class="history-item">
+          <div class="hi-icon" style="background:${typeBg[r.record_type]||'rgba(255,255,255,0.06)'}">${typeIcons[r.record_type]||'📝'}</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:4px">
+              <div class="hi-title">${r.title}</div>
+              <span style="font-size:10px;padding:2px 8px;border-radius:50px;background:rgba(255,255,255,0.06);color:var(--muted)">${typeLabels[r.record_type]||r.record_type}</span>
+              <span class="severity-badge ${r.severity}">${r.severity}</span>
+              ${r.is_ongoing?'<span class="ongoing-badge">Ongoing</span>':''}
+            </div>
+            <div class="hi-meta">
+              ${r.date_occurred?'📅 '+r.date_occurred+' &nbsp;':''}
+              ${r.doctor_name?'👨‍⚕️ Dr. '+r.doctor_name+' &nbsp;':''}
+              ${r.hospital?'🏥 '+r.hospital:''}
+            </div>
+            ${r.description?`<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5">${r.description}</div>`:''}
+          </div>
+          <button class="btn-sm btn-danger" onclick="deleteHistory(${r.id})" style="flex-shrink:0">🗑</button>
+        </div>`).join('');
+    } catch(e) {
+      el.innerHTML = '<div class="loading-text">Failed to load records. Please try again.</div>';
+    }
+  }
+
+  async function addHistory() {
+    const title=document.getElementById('hTitle').value.trim();
+    if(!title){toast('Title is required','error');return;}
+    try {
+      await fetch('/api/medical-history',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          record_type:document.getElementById('hType').value,
+          title,
+          description:document.getElementById('hDesc').value,
+          date_occurred:document.getElementById('hDate').value,
+          doctor_name:document.getElementById('hDoctor').value,
+          hospital:document.getElementById('hHospital').value,
+          severity:document.getElementById('hSeverity').value,
+          is_ongoing:document.getElementById('hOngoing').checked
+        })});
+      toast('✅ Record saved!','success');
+      closeModal('addHistoryModal');
+      loadHistory(currentHistoryFilter); // Reload with same filter active
+    } catch(e) { toast('Failed to save record','error'); }
+  }
+
+  async function deleteHistory(id) {
+    if(!confirm('Delete this record?'))return;
+    try {
+      await fetch(`/api/medical-history/${id}`,{method:'DELETE'});
+      toast('Deleted','info');
+      loadHistory(currentHistoryFilter);
+    } catch(e) { toast('Failed to delete','error'); }
+  }
+
+  // ══════════════════ INSURANCE ══════════════════
+  async function loadInsurance() {
+    const [records, providers] = await Promise.all([
+      fetch('/api/insurance').then(r=>r.json()),
+      fetch('/api/insurance/providers').then(r=>r.json())
+    ]);
+
+    // Populate provider dropdown
+    const sel = document.getElementById('insProvider');
+    sel.innerHTML = providers.map(p=>`<option>${p}</option>`).join('');
+
+    const el = document.getElementById('insuranceList');
+    if(!records.length){
+      el.innerHTML=`<div class="empty-state"><div class="es-icon">🛡️</div><div class="es-text">No insurance policies added yet.</div></div>`;
+      return;
+    }
+    el.innerHTML = records.map(r=>{
+      const expDate = r.expiry_date?new Date(r.expiry_date):null;
+      const daysLeft = expDate?Math.round((expDate-new Date())/(1000*60*60*24)):null;
+      const expiryWarn = daysLeft!==null&&daysLeft<=60?`<div class="expiry-warn">⚠️ Expiring in ${daysLeft} days — renew soon!</div>`:'';
+      return `<div class="insurance-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="ins-provider">${r.provider_name}</div>
+            <div style="font-size:12px;color:var(--muted)">${r.policy_type||''} ${r.policy_number?'· Policy: '+r.policy_number:''}</div>
+          </div>
+          <button class="btn-sm btn-danger" onclick="deleteInsurance(${r.id})">🗑</button>
+        </div>
+        <div class="ins-meta">
+          <div class="ins-meta-item"><div class="key">Sum Insured</div><div class="val" style="color:var(--accent2)">₹${(r.sum_insured||0).toLocaleString('en-IN')}</div></div>
+          <div class="ins-meta-item"><div class="key">Premium</div><div class="val">₹${(r.premium_amount||0).toLocaleString('en-IN')} / ${r.premium_freq||'year'}</div></div>
+          <div class="ins-meta-item"><div class="key">Expires</div><div class="val" style="color:${daysLeft<=60?'var(--accent3)':'var(--text)'}">${r.expiry_date||'—'}</div></div>
+        </div>
+        ${r.nominee_name?`<div style="font-size:12px;color:var(--muted);margin-top:8px">Nominee: ${r.nominee_name}</div>`:''}
+        ${r.cashless_hospitals?`<div style="font-size:12px;color:var(--muted);margin-top:4px">Cashless: ${r.cashless_hospitals}</div>`:''}
+        ${expiryWarn}
+      </div>`;
+    }).join('');
+  }
+
+  async function addInsurance() {
+    const provider=document.getElementById('insProvider').value;
+    if(!provider){toast('Provider required','error');return;}
+    try {
+      await fetch('/api/insurance',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          provider_name:provider,
+          policy_number:document.getElementById('insPolicy').value,
+          policy_type:document.getElementById('insType').value,
+          sum_insured:parseFloat(document.getElementById('insSum').value)||0,
+          premium_amount:parseFloat(document.getElementById('insPremium').value)||0,
+          premium_freq:document.getElementById('insFreq').value,
+          start_date:document.getElementById('insStart').value,
+          expiry_date:document.getElementById('insExpiry').value,
+          nominee_name:document.getElementById('insNominee').value,
+          contact_number:document.getElementById('insContact').value,
+          cashless_hospitals:document.getElementById('insCashless').value
+        })});
+      toast('✅ Policy saved!','success');
+      closeModal('addInsuranceModal');
+      loadInsurance();
+    } catch(e) { toast('Failed to save policy','error'); }
+  }
+
+  async function deleteInsurance(id) {
+    if(!confirm('Delete this policy?'))return;
+    await fetch(`/api/insurance/${id}`,{method:'DELETE'});
+    toast('Deleted','info'); loadInsurance();
+  }
+
+  // ══════════════════ FAMILY ══════════════════
+  const relationEmojis={Father:'👨',Mother:'👩',Spouse:'💑',Son:'👦',Daughter:'👧',
+    Brother:'👦',Sister:'👧',Grandfather:'👴',Grandmother:'👵',Other:'👤'};
+  const relationColors=['rgba(0,229,255,0.1)','rgba(0,255,136,0.1)','rgba(167,139,250,0.1)',
+    'rgba(255,179,71,0.1)','rgba(255,107,107,0.1)'];
+
+  async function loadFamily() {
+    const members = await(await fetch('/api/family')).json();
+    const el = document.getElementById('familyList');
+    if(!members.length){
+      el.innerHTML=`<div class="empty-state"><div class="es-icon">👨‍👩‍👧</div><div class="es-text">No family members added yet.</div></div>`;
+      return;
+    }
+    el.innerHTML = members.map((m,i)=>`
+      <div class="family-card">
+        <div class="fc-avatar" style="background:${relationColors[i%5]}">${relationEmojis[m.relation]||'👤'}</div>
+        <div style="flex:1">
+          <div class="fc-name">${m.name}</div>
+          <div class="fc-relation">${m.relation} ${m.age?'· Age '+m.age:''} ${m.blood_group?'· '+m.blood_group:''}</div>
+          <div class="fc-details">
+            ${m.phone?'📞 '+m.phone+'<br>':''}
+            ${m.conditions?'🫀 Conditions: '+m.conditions+'<br>':''}
+            ${m.medicines?'💊 Medicines: '+m.medicines:''}
+          </div>
+        </div>
+        <div class="fc-actions">
+          <button class="btn-sm btn-danger" onclick="deleteFamilyMember(${m.id})">🗑</button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function addFamilyMember() {
+    const name=document.getElementById('fmName').value.trim();
+    const relation=document.getElementById('fmRelation').value;
+    if(!name){toast('Name required','error');return;}
+    try {
+      await fetch('/api/family',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          name, relation,
+          age:document.getElementById('fmAge').value||null,
+          blood_group:document.getElementById('fmBlood').value,
+          phone:document.getElementById('fmPhone').value,
+          conditions:document.getElementById('fmConditions').value,
+          medicines:document.getElementById('fmMedicines').value
+        })});
+      toast('✅ Member added!','success');
+      closeModal('addFamilyModal');
+      loadFamily();
+    } catch(e) { toast('Failed to add member','error'); }
+  }
+
+  async function deleteFamilyMember(id) {
+    if(!confirm('Remove this family member?'))return;
+    await fetch(`/api/family/${id}`,{method:'DELETE'});
+    toast('Removed','info'); loadFamily();
+  }
+
+  // ══════════════════ DOCTORS ══════════════════
+  async function loadDoctors() {
+    const [doctors, meta] = await Promise.all([
+      fetch('/api/doctors').then(r=>r.json()),
+      fetch('/api/doctors/meta').then(r=>r.json())
+    ]);
+
+    // Populate dropdowns
+    document.getElementById('dcSpecialty').innerHTML = meta.specialties.map(s=>`<option>${s}</option>`).join('');
+    document.getElementById('dcCity').innerHTML = meta.cities.map(c=>`<option>${c}</option>`).join('');
+
+    const el = document.getElementById('doctorsList');
+    if(!doctors.length){
+      el.innerHTML=`<div class="empty-state"><div class="es-icon">🩺</div><div class="es-text">No doctors added yet.</div></div>`;
+      return;
+    }
+    el.innerHTML = doctors.map(d=>`
+      <div class="doctor-card">
+        <div class="dc-avatar">🩺</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center">
+            <div class="dc-name">Dr. ${d.name}</div>
+            ${d.is_primary?'<span class="primary-badge">⭐ Primary</span>':''}
+          </div>
+          <div class="dc-spec">${d.specialty||''}</div>
+          <div class="dc-meta">
+            ${d.hospital?'🏥 '+d.hospital+(d.city?' · '+d.city:'')+'<br>':''}
+            ${d.phone?'📞 '+d.phone+'<br>':''}
+            ${d.address?'📍 '+d.address:''}
+          </div>
+          ${d.rating?`<div style="font-size:12px;margin-top:4px">⭐ ${d.rating}/5</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:flex-start">
+          ${d.phone?`<a href="tel:${d.phone}" class="btn-sm" style="background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);text-decoration:none;padding:6px 12px;border-radius:8px;font-size:12px">📞 Call</a>`:''}
+          <button class="btn-sm btn-danger" onclick="deleteDoctor(${d.id})">🗑</button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function addDoctor() {
+    const name=document.getElementById('dcName').value.trim();
+    if(!name){toast('Name required','error');return;}
+    try {
+      await fetch('/api/doctors',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          name,
+          specialty:document.getElementById('dcSpecialty').value,
+          hospital:document.getElementById('dcHospital').value,
+          city:document.getElementById('dcCity').value,
+          phone:document.getElementById('dcPhone').value,
+          rating:parseFloat(document.getElementById('dcRating').value)||0,
+          address:document.getElementById('dcAddress').value,
+          is_primary:document.getElementById('dcPrimary').checked
+        })});
+      toast('✅ Doctor added!','success');
+      closeModal('addDoctorModal');
+      loadDoctors();
+    } catch(e) { toast('Failed to add doctor','error'); }
+  }
+
+  async function deleteDoctor(id) {
+    if(!confirm('Remove this doctor?'))return;
+    await fetch(`/api/doctors/${id}`,{method:'DELETE'});
+    toast('Removed','info'); loadDoctors();
+  }
+
+  // ══════════════════ PLATFORMS ══════════════════
+  async function searchPlatforms() {
+    const q=document.getElementById('platformSearch').value.trim();
+    const city=document.getElementById('platformCity').value;
+    if(!q){toast('Enter a search term','warning');return;}
+    const data = await(await fetch(`/api/platform/search?q=${encodeURIComponent(q)}&city=${city}`)).json();
+    document.getElementById('platformLinks').innerHTML = `
+      <div class="panel-title" style="margin-bottom:12px">🔍 Search results for "${q}" in ${city}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+        <a href="${data.onemg_url}" target="_blank" class="platform-card">
+          <div class="platform-icon" style="background:rgba(255,59,59,0.1)">💊</div>
+          <div><div class="platform-name">Search on 1mg</div><div class="platform-desc">Medicines, health products</div></div>
+        </a>
+        <a href="${data.practo_url}" target="_blank" class="platform-card">
+          <div class="platform-icon" style="background:rgba(0,180,100,0.1)">🩺</div>
+          <div><div class="platform-name">Find on Practo</div><div class="platform-desc">Doctors in ${city}</div></div>
+        </a>
+        <a href="${data.apollo_url}" target="_blank" class="platform-card">
+          <div class="platform-icon" style="background:rgba(0,100,255,0.1)">🏥</div>
+          <div><div class="platform-name">Apollo Pharmacy</div><div class="platform-desc">Buy medicines online</div></div>
+        </a>
+        <a href="${data.netmeds_url}" target="_blank" class="platform-card">
+          <div class="platform-icon" style="background:rgba(0,200,150,0.1)">🌿</div>
+          <div><div class="platform-name">Netmeds</div><div class="platform-desc">Order medicines</div></div>
+        </a>
+      </div>`;
+  }
+
+  // ══════════════════ PREFERENCES ══════════════════
+  async function loadPreferences() {
+    const prefs = await(await fetch('/api/preferences')).json();
+    if(prefs.diet_type) document.getElementById('prefDiet').value = prefs.diet_type;
+    if(prefs.state) document.getElementById('prefState').value = prefs.state;
+    if(prefs.city) document.getElementById('prefCity').value = prefs.city;
+    if(prefs.blood_group) document.getElementById('prefBlood').value = prefs.blood_group;
+    if(prefs.calorie_goal) document.getElementById('prefCalGoal').value = prefs.calorie_goal;
+    if(prefs.water_goal) document.getElementById('prefWaterGoal').value = prefs.water_goal;
+    if(prefs.weight_goal) document.getElementById('prefWeightGoal').value = prefs.weight_goal;
+    if(prefs.allergies) document.getElementById('prefAllergies').value = prefs.allergies;
+  }
+
+  async function savePreferences() {
+    const prefs = {
+      diet_type: document.getElementById('prefDiet').value,
+      state: document.getElementById('prefState').value,
+      city: document.getElementById('prefCity').value,
+      blood_group: document.getElementById('prefBlood').value,
+      calorie_goal: document.getElementById('prefCalGoal').value||'2000',
+      water_goal: document.getElementById('prefWaterGoal').value||'3',
+      weight_goal: document.getElementById('prefWeightGoal').value||'70',
+      allergies: document.getElementById('prefAllergies').value,
+    };
+    await fetch('/api/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(prefs)});
+    toast('✅ Preferences saved!','success');
+  }
+
+  // ── Boot ──
+  loadUser();
+  initNutritionDate();
+  loadNutrition();
+</script>
+</body>
+</html>

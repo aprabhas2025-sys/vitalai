@@ -1,235 +1,996 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VitalAI — Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #050d1a; --surface: #0a1628; --card: #0f1f38; --card2: #0c1a30;
-      --accent: #00e5ff; --accent2: #00ff88; --accent3: #ff6b6b; --accent4: #ffb347;
-      --text: #e8f4f8; --muted: #7a9bb5; --border: rgba(0,229,255,0.1);
-    }
-    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:grid; grid-template-columns:260px 1fr; grid-template-rows:auto 1fr; }
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS — DARK & LIGHT
+═══════════════════════════════════════════ */
+:root {
+  --transition-theme: background 0.4s, color 0.4s, border-color 0.4s, box-shadow 0.4s;
+}
 
-    /* Sidebar */
-    .sidebar { grid-row:1/-1; background:var(--surface); border-right:1px solid var(--border); padding:28px 20px; display:flex; flex-direction:column; gap:4px; height:100vh; position:sticky; top:0; overflow-y:auto; }
-    .logo { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--accent); padding:0 12px 24px; border-bottom:1px solid var(--border); margin-bottom:12px; }
-    .logo span { color:var(--accent2); }
-    .user-pill { display:flex; align-items:center; gap:10px; background:var(--card); border-radius:12px; padding:10px 14px; margin-bottom:16px; }
-    .user-pill img { width:36px; height:36px; border-radius:50%; border:2px solid var(--accent); object-fit:cover; }
-    .user-name { font-size:13px; font-weight:500; }
-    .user-email { font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px; }
-    .nav-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:10px; cursor:pointer; font-size:14px; color:var(--muted); transition:all 0.2s; text-decoration:none; border:none; background:none; width:100%; text-align:left; }
-    .nav-item:hover { background:rgba(0,229,255,0.06); color:var(--text); }
-    .nav-item.active { background:rgba(0,229,255,0.1); color:var(--text); border-left:3px solid var(--accent); }
-    .nav-item .icon { font-size:18px; width:24px; text-align:center; }
-    .sidebar-footer { margin-top:auto; padding-top:16px; border-top:1px solid var(--border); }
-    .logout-btn { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; color:var(--accent3); font-size:14px; cursor:pointer; text-decoration:none; transition:background 0.2s; }
-    .logout-btn:hover { background:rgba(255,107,107,0.08); }
+[data-theme="dark"] {
+  --bg:        #060d18;
+  --bg2:       #080f1e;
+  --surface:   #0b1628;
+  --card:      #0f1e35;
+  --card2:     #0d1a2f;
+  --glass:     rgba(255,255,255,0.04);
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(0,220,255,0.18);
+  --text:      #e4f0fa;
+  --text2:     #6b8da8;
+  --text3:     #4a6880;
+  --accent:    #00dcff;
+  --accent2:   #00e87a;
+  --accent3:   #ff5f6d;
+  --accent4:   #ffaa33;
+  --violet:    #9d7eff;
+  --sidebar-w: 72px;
+  --sidebar-w-open: 240px;
+  --shadow:    0 8px 32px rgba(0,0,0,0.5);
+  --shadow2:   0 2px 12px rgba(0,0,0,0.3);
+  --inset:     inset 0 1px 0 rgba(255,255,255,0.05);
+}
 
-    /* Topbar */
-    .topbar { grid-column:2; background:var(--surface); border-bottom:1px solid var(--border); padding:18px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
-    .topbar-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; }
-    .refresh-btn { display:flex; align-items:center; gap:8px; background:rgba(0,229,255,0.08); border:1px solid var(--border); border-radius:10px; padding:8px 16px; color:var(--accent); font-size:13px; cursor:pointer; transition:all 0.2s; }
-    .refresh-btn:hover { background:rgba(0,229,255,0.15); }
-    .refresh-btn.spinning .spin-icon { display:inline-block; animation:spin 1s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .last-updated { font-size:12px; color:var(--muted); }
+[data-theme="light"] {
+  --bg:        #f0f4fb;
+  --bg2:       #e8eef8;
+  --surface:   #ffffff;
+  --card:      #ffffff;
+  --card2:     #f6f9ff;
+  --glass:     rgba(255,255,255,0.7);
+  --border:    rgba(30,80,180,0.1);
+  --border2:   rgba(30,100,220,0.25);
+  --text:      #0d1f3c;
+  --text2:     #5a7399;
+  --text3:     #8aa0be;
+  --accent:    #1a6ff5;
+  --accent2:   #00b860;
+  --accent3:   #e53535;
+  --accent4:   #e07800;
+  --violet:    #6d4fd4;
+  --sidebar-w: 72px;
+  --sidebar-w-open: 240px;
+  --shadow:    0 8px 32px rgba(30,80,180,0.12);
+  --shadow2:   0 2px 10px rgba(30,80,180,0.08);
+  --inset:     inset 0 1px 0 rgba(255,255,255,0.9);
+}
 
-    /* Pages */
-    .page { display:none; }
-    .page.active { display:block; }
-    main { grid-column:2; padding:28px 32px; overflow-y:auto; }
+/* ═══════════════════════════════════════════
+   BASE
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Metric cards */
-    .metrics-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
-    .metric-card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:24px; position:relative; overflow:hidden; transition:transform 0.2s; }
-    .metric-card:hover { transform:translateY(-2px); }
-    .metric-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0 0 18px 18px; }
-    .metric-card.steps::after { background:linear-gradient(90deg,var(--accent),transparent); }
-    .metric-card.heart::after { background:linear-gradient(90deg,var(--accent3),transparent); }
-    .metric-card.calories::after { background:linear-gradient(90deg,var(--accent4),transparent); }
-    .metric-card.weight::after { background:linear-gradient(90deg,var(--accent2),transparent); }
-    .metric-label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
-    .metric-value { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; line-height:1; }
-    .metric-unit { font-size:14px; color:var(--muted); margin-left:4px; font-weight:400; }
-    .metric-icon { position:absolute; top:20px; right:20px; font-size:28px; opacity:0.25; }
-    .metric-sub { font-size:12px; color:var(--muted); margin-top:8px; }
-    .progress-wrap { margin-top:12px; }
-    .progress-bar { height:4px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; }
-    .progress-fill { height:100%; border-radius:4px; transition:width 1.2s ease; }
+html { font-size: 14px; }
 
-    /* Panels */
-    .bottom-grid { display:grid; grid-template-columns:1fr 380px; gap:20px; }
-    .panel { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:24px; margin-bottom:20px; }
-    .panel-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
-    .chart-wrap { height:240px; position:relative; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-rows: 64px 1fr;
+  transition: var(--transition-theme);
+  overflow-x: hidden;
+}
 
-    /* Chat */
-    .chat-panel { display:flex; flex-direction:column; height:440px; }
-    .chat-messages { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:12px; padding-right:4px; margin-bottom:16px; }
-    .chat-messages::-webkit-scrollbar { width:4px; }
-    .chat-messages::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
-    .msg { display:flex; flex-direction:column; gap:4px; max-width:90%; }
-    .msg.user { align-self:flex-end; align-items:flex-end; }
-    .msg.ai { align-self:flex-start; }
-    .msg-bubble { padding:10px 14px; border-radius:14px; font-size:13px; line-height:1.6; }
-    .msg.user .msg-bubble { background:linear-gradient(135deg,rgba(0,229,255,0.2),rgba(0,255,136,0.1)); border:1px solid rgba(0,229,255,0.2); }
-    .msg.ai .msg-bubble { background:var(--card2); border:1px solid var(--border); }
-    .msg-time { font-size:10px; color:var(--muted); }
-    .chat-input-row { display:flex; gap:8px; }
-    .chat-input { flex:1; background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:10px 14px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; transition:border-color 0.2s; }
-    .chat-input:focus { border-color:rgba(0,229,255,0.4); }
-    .chat-input::placeholder { color:var(--muted); }
-    .send-btn { background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; border-radius:10px; padding:10px 18px; color:#050d1a; font-weight:700; cursor:pointer; font-size:18px; transition:opacity 0.2s; }
-    .send-btn:hover { opacity:0.85; }
-    .typing { display:flex; gap:4px; padding:12px 14px; background:var(--card2); border:1px solid var(--border); border-radius:14px; width:fit-content; }
-    .typing span { width:6px; height:6px; background:var(--muted); border-radius:50%; animation:bounce 1.2s infinite; }
-    .typing span:nth-child(2) { animation-delay:0.2s; }
-    .typing span:nth-child(3) { animation-delay:0.4s; }
-    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+body.sidebar-open {
+  grid-template-columns: var(--sidebar-w-open) 1fr;
+}
 
-    /* Activity page */
-    .activity-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
-    .activity-stat { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; text-align:center; }
-    .activity-stat .big { font-family:'Syne',sans-serif; font-size:32px; font-weight:800; }
-    .activity-stat .label { font-size:12px; color:var(--muted); margin-top:4px; }
+/* ═══════════════════════════════════════════
+   SIDEBAR — ICON RAIL + SLIDE OPEN
+═══════════════════════════════════════════ */
+.sidebar {
+  grid-row: 1 / -1;
+  grid-column: 1;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 16px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow: hidden;
+  width: var(--sidebar-w);
+  transition: width 0.35s cubic-bezier(0.4,0,0.2,1);
+  z-index: 50;
+  box-shadow: var(--shadow2);
+}
 
-    /* Heart Rate page */
-    .hr-status-card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:32px; text-align:center; margin-bottom:20px; }
-    .hr-big { font-family:'Syne',sans-serif; font-size:80px; font-weight:800; color:var(--accent3); line-height:1; }
-    .hr-label { font-size:16px; color:var(--muted); margin-top:8px; }
-    .hr-badge { display:inline-block; padding:6px 18px; border-radius:50px; font-size:13px; font-weight:600; margin-top:16px; }
-    .hr-badge.normal { background:rgba(0,255,136,0.1); color:var(--accent2); border:1px solid rgba(0,255,136,0.3); }
-    .hr-badge.warning { background:rgba(255,107,107,0.1); color:var(--accent3); border:1px solid rgba(255,107,107,0.3); }
-    .hr-badge.nodata { background:rgba(255,255,255,0.05); color:var(--muted); border:1px solid var(--border); }
-    .hr-zones { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
-    .hr-zone { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; text-align:center; }
-    .hr-zone .zone-name { font-size:12px; color:var(--muted); margin-bottom:6px; }
-    .hr-zone .zone-range { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; }
+body.sidebar-open .sidebar {
+  width: var(--sidebar-w-open);
+  align-items: flex-start;
+}
 
-    /* Sleep page */
-    .sleep-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
-    .sleep-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; text-align:center; }
-    .sleep-card .big { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; color:#a78bfa; }
-    .sleep-card .lbl { font-size:12px; color:var(--muted); margin-top:6px; }
-    .sleep-tip { background:var(--card2); border:1px solid var(--border); border-radius:14px; padding:16px 20px; margin-bottom:12px; display:flex; gap:14px; align-items:flex-start; }
-    .sleep-tip .tip-icon { font-size:22px; flex-shrink:0; }
-    .sleep-tip .tip-title { font-weight:600; font-size:14px; margin-bottom:4px; }
-    .sleep-tip .tip-body { font-size:13px; color:var(--muted); line-height:1.5; }
+/* Logo area */
+.sidebar-logo {
+  width: 100%;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+  padding: 0 16px;
+  overflow: hidden;
+}
 
-    /* Settings */
-    .settings-section { margin-bottom:28px; }
-    .settings-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; }
-    .setting-row { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-    .setting-name { font-size:14px; font-weight:500; }
-    .setting-desc { font-size:12px; color:var(--muted); margin-top:2px; }
-    .toggle { width:44px; height:24px; background:var(--border); border-radius:50px; position:relative; cursor:pointer; transition:background 0.3s; border:none; flex-shrink:0; }
-    .toggle.on { background:var(--accent2); }
-    .toggle::after { content:''; position:absolute; width:18px; height:18px; background:white; border-radius:50%; top:3px; left:3px; transition:left 0.3s; }
-    .toggle.on::after { left:23px; }
-    .setting-tag { font-size:11px; padding:4px 10px; border-radius:50px; background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2); }
+.logo-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(0,220,255,0.3);
+}
 
-    /* Misc */
-    .error-banner { background:rgba(255,107,107,0.08); border:1px solid rgba(255,107,107,0.2); border-radius:12px; padding:14px 18px; color:var(--accent3); font-size:13px; margin-bottom:20px; display:none; }
-    .status-dot { width:8px; height:8px; border-radius:50%; background:var(--accent2); animation:pdot 2s infinite; }
-    @keyframes pdot { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .section-heading { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; margin-bottom:20px; }
-    .quick-btn { background:rgba(0,229,255,0.08); border:1px solid var(--border); border-radius:50px; padding:7px 16px; color:var(--accent); font-size:13px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
-    .quick-btn:hover { background:rgba(0,229,255,0.16); }
-    .tip-block { padding:14px; background:var(--card2); border-radius:12px; border:1px solid var(--border); margin-bottom:10px; }
-    .tip-block-title { font-weight:600; margin-bottom:4px; }
-    .tip-block-body { font-size:13px; color:var(--muted); }
+.logo-icon svg { width: 20px; height: 20px; color: #fff; }
 
-    @media(max-width:1100px) {
-      .metrics-grid { grid-template-columns:repeat(2,1fr); }
-      .bottom-grid { grid-template-columns:1fr; }
-      .hr-zones { grid-template-columns:repeat(2,1fr); }
-    }
+.logo-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 0.25s, transform 0.25s;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+body.sidebar-open .logo-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Toggle button */
+.sidebar-toggle {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text2);
+  flex-shrink: 0;
+  margin: 8px 0;
+  transition: color 0.2s;
+}
+.sidebar-toggle:hover { color: var(--accent); }
+.sidebar-toggle svg { width: 20px; height: 20px; transition: transform 0.35s; }
+body.sidebar-open .sidebar-toggle svg { transform: rotate(180deg); }
+
+/* User avatar */
+.sidebar-user {
+  width: 100%;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-bottom: 8px;
+}
+
+.sidebar-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.sidebar-user-info {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.2s 0.05s, transform 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+body.sidebar-open .sidebar-user-info { opacity: 1; transform: translateX(0); }
+.sidebar-uname { font-size: 13px; font-weight: 600; }
+.sidebar-uemail { font-size: 11px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+
+/* Nav items */
+.nav-items { width: 100%; flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 10px; display: flex; flex-direction: column; gap: 2px; }
+.nav-items::-webkit-scrollbar { width: 0; }
+
+.nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 10px;
+  border-radius: 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text2);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.nav-item:hover {
+  background: var(--glass);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(0,220,255,0.12), rgba(0,220,255,0.04));
+  color: var(--accent);
+  border: 1px solid var(--border2);
+}
+
+[data-theme="light"] .nav-item.active {
+  background: linear-gradient(135deg, rgba(26,111,245,0.1), rgba(26,111,245,0.04));
+  color: var(--accent);
+  border: 1px solid rgba(26,111,245,0.2);
+}
+
+/* Animated active indicator */
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+}
+
+.nav-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.nav-item:hover .nav-icon { transform: scale(1.08); }
+.nav-item.active .nav-icon { background: rgba(0,220,255,0.1); }
+[data-theme="light"] .nav-item.active .nav-icon { background: rgba(26,111,245,0.1); }
+
+.nav-icon svg { width: 18px; height: 18px; }
+
+.nav-label {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.2s 0.05s, transform 0.2s;
+  pointer-events: none;
+}
+body.sidebar-open .nav-label { opacity: 1; transform: translateX(0); pointer-events: auto; }
+
+.nav-badge {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 50px;
+  background: rgba(0,232,122,0.12);
+  color: var(--accent2);
+  border: 1px solid rgba(0,232,122,0.25);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+body.sidebar-open .nav-badge { opacity: 1; }
+
+/* Sidebar footer */
+.sidebar-footer {
+  width: 100%;
+  padding: 0 10px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+/* ═══════════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════════ */
+.topbar {
+  grid-column: 2;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  box-shadow: var(--shadow2);
+  height: 64px;
+}
+
+.topbar-left { display: flex; flex-direction: column; }
+.topbar-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.topbar-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+/* Theme toggle */
+.theme-btn {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2);
+  transition: all 0.2s;
+}
+.theme-btn:hover { border-color: var(--border2); color: var(--accent); }
+.theme-btn svg { width: 16px; height: 16px; }
+
+.refresh-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 16px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.refresh-btn:hover { background: rgba(0,220,255,0.08); border-color: var(--border2); }
+.refresh-btn.spinning .spin-icon { animation: spin 1s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════ */
+main {
+  grid-column: 2;
+  padding: 24px 28px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+/* ═══════════════════════════════════════════
+   METRIC CARDS
+═══════════════════════════════════════════ */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.metric-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s, box-shadow 0.25s, var(--transition-theme);
+  cursor: default;
+  box-shadow: var(--shadow2), var(--inset);
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow), var(--inset);
+  border-color: var(--border2);
+}
+
+/* Glow orb inside card */
+.metric-card::before {
+  content: '';
+  position: absolute;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  top: -40px; right: -30px;
+  opacity: 0.12;
+  transition: opacity 0.3s;
+}
+.metric-card:hover::before { opacity: 0.2; }
+.metric-card.steps::before  { background: var(--accent); }
+.metric-card.heart::before  { background: var(--accent3); }
+.metric-card.cals::before   { background: var(--accent4); }
+.metric-card.weight::before { background: var(--accent2); }
+
+/* Bottom accent line */
+.metric-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 0 0 20px 20px;
+}
+.metric-card.steps::after  { background: linear-gradient(90deg, var(--accent), transparent); }
+.metric-card.heart::after  { background: linear-gradient(90deg, var(--accent3), transparent); }
+.metric-card.cals::after   { background: linear-gradient(90deg, var(--accent4), transparent); }
+.metric-card.weight::after { background: linear-gradient(90deg, var(--accent2), transparent); }
+
+.metric-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.metric-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; }
+.metric-icon-box {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.metric-icon-box svg { width: 18px; height: 18px; }
+
+.metric-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+.metric-unit { font-size: 13px; color: var(--text2); margin-left: 3px; font-weight: 400; font-family: 'Inter', sans-serif; }
+.metric-sub { font-size: 11px; color: var(--text2); margin-top: 6px; }
+
+.progress-bar {
+  height: 3px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+[data-theme="light"] .progress-bar { background: rgba(0,0,0,0.07); }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 1.4s cubic-bezier(0.4,0,0.2,1); }
+
+/* ═══════════════════════════════════════════
+   PANELS
+═══════════════════════════════════════════ */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow2), var(--inset);
+  transition: var(--transition-theme);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.panel-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.2px;
+}
+
+.live-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(0,232,122,0.1);
+  border: 1px solid rgba(0,232,122,0.2);
+  border-radius: 50px;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent2);
+  letter-spacing: 0.5px;
+}
+.live-dot {
+  width: 6px; height: 6px;
+  background: var(--accent2);
+  border-radius: 50%;
+  animation: pulse-dot 1.5s infinite;
+}
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+.chart-wrap { height: 240px; position: relative; }
+
+/* ═══════════════════════════════════════════
+   CHAT
+═══════════════════════════════════════════ */
+.chat-panel { display: flex; flex-direction: column; height: 420px; }
+.chat-messages {
+  flex: 1; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px;
+  padding-right: 4px; margin-bottom: 14px;
+}
+.chat-messages::-webkit-scrollbar { width: 3px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.msg { display: flex; flex-direction: column; gap: 3px; max-width: 88%; }
+.msg.user { align-self: flex-end; align-items: flex-end; }
+.msg.ai { align-self: flex-start; }
+
+.msg-bubble {
+  padding: 10px 14px; border-radius: 14px;
+  font-size: 13px; line-height: 1.6; font-family: 'Inter', sans-serif;
+}
+.msg.user .msg-bubble {
+  background: linear-gradient(135deg, rgba(0,220,255,0.15), rgba(0,232,122,0.08));
+  border: 1px solid var(--border2);
+}
+.msg.ai .msg-bubble { background: var(--card2); border: 1px solid var(--border); }
+.msg-time { font-size: 10px; color: var(--text3); }
+
+.chat-input-row { display: flex; gap: 8px; }
+.chat-input {
+  flex: 1; background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px;
+  outline: none; transition: border-color 0.2s;
+}
+.chat-input:focus { border-color: var(--border2); }
+.chat-input::placeholder { color: var(--text3); }
+
+.send-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: 12px;
+  padding: 10px 18px; color: #050d1a;
+  font-weight: 700; cursor: pointer; font-size: 16px;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.send-btn:hover { opacity: 0.85; transform: scale(1.04); }
+
+.typing { display: flex; gap: 4px; padding: 12px 14px; background: var(--card2); border: 1px solid var(--border); border-radius: 14px; width: fit-content; }
+.typing span { width: 6px; height: 6px; background: var(--text3); border-radius: 50%; animation: bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+/* ═══════════════════════════════════════════
+   SECTION HEADING
+═══════════════════════════════════════════ */
+.section-heading {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px; font-weight: 800;
+  letter-spacing: -0.5px; margin-bottom: 20px;
+}
+
+/* ═══════════════════════════════════════════
+   ACTIVITY PAGE
+═══════════════════════════════════════════ */
+.activity-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+.activity-stat {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px; text-align: center;
+  box-shadow: var(--shadow2);
+}
+.activity-stat .big { font-family:'Syne',sans-serif; font-size: 28px; font-weight: 800; }
+.activity-stat .label { font-size: 11px; color: var(--text2); margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Goal bars */
+.goal-item { margin-bottom: 16px; }
+.goal-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; font-weight: 500; }
+.goal-bar { height: 6px; background: var(--card2); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+.goal-fill { height: 100%; border-radius: 6px; transition: width 1.4s cubic-bezier(0.4,0,0.2,1); }
+
+/* ═══════════════════════════════════════════
+   HEART RATE PAGE — ANIMATED
+═══════════════════════════════════════════ */
+.hr-hero {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px;
+  text-align: center;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow2), var(--inset);
+}
+
+/* Animated glow behind BPM */
+.hr-glow {
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255,95,109,0.12) 0%, transparent 70%);
+  animation: hrGlowPulse 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes hrGlowPulse {
+  0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
+  50%      { transform: translate(-50%,-50%) scale(1.3); opacity: 1; }
+}
+
+.hr-bpm-wrap { position: relative; z-index: 1; }
+.hr-bpm {
+  font-family: 'Syne', sans-serif;
+  font-size: 96px; font-weight: 800;
+  line-height: 1;
+  color: var(--accent3);
+  letter-spacing: -4px;
+  animation: hrBeat 1.5s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes hrBeat {
+  0%,100% { transform: scale(1); }
+  15%     { transform: scale(1.04); }
+  30%     { transform: scale(1); }
+}
+
+.hr-label { font-size: 14px; color: var(--text2); margin-top: 6px; font-weight: 500; }
+
+.hr-badge {
+  display: inline-block;
+  padding: 7px 20px; border-radius: 50px;
+  font-size: 13px; font-weight: 600; margin-top: 16px;
+}
+.hr-badge.normal  { background: rgba(0,232,122,0.1); color: var(--accent2); border: 1px solid rgba(0,232,122,0.25); }
+.hr-badge.warning { background: rgba(255,95,109,0.1); color: var(--accent3); border: 1px solid rgba(255,95,109,0.25); }
+.hr-badge.nodata  { background: var(--glass); color: var(--text2); border: 1px solid var(--border); }
+
+/* Animated ECG wave canvas */
+.hr-wave-wrap {
+  position: relative;
+  height: 80px;
+  overflow: hidden;
+  margin: 24px 0 0;
+}
+
+#ecgCanvas {
+  width: 100%; height: 100%;
+}
+
+/* HR Zones */
+.hr-zones { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }
+.hr-zone {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px; text-align: center;
+  box-shadow: var(--shadow2);
+}
+.hr-zone .zone-name { font-size: 11px; color: var(--text2); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.hr-zone .zone-range { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.hr-zone .zone-unit { font-size: 10px; color: var(--text2); margin-top: 3px; }
+
+/* ═══════════════════════════════════════════
+   SLEEP PAGE
+═══════════════════════════════════════════ */
+.sleep-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+.sleep-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 22px; text-align: center;
+  box-shadow: var(--shadow2);
+}
+.sleep-card .big { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: var(--violet); }
+.sleep-card .lbl { font-size: 11px; color: var(--text2); margin-top: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.sleep-tip { background: var(--card2); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; margin-bottom: 10px; display: flex; gap: 12px; align-items: flex-start; }
+.sleep-tip .tip-icon { font-size: 20px; flex-shrink: 0; }
+.sleep-tip .tip-title { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+.sleep-tip .tip-body { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+/* ═══════════════════════════════════════════
+   AI PAGE
+═══════════════════════════════════════════ */
+.quick-btn {
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: 50px; padding: 7px 16px;
+  color: var(--accent); font-size: 12px; font-weight: 500;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: all 0.2s; white-space: nowrap;
+}
+.quick-btn:hover { background: rgba(0,220,255,0.1); border-color: var(--border2); }
+
+/* ═══════════════════════════════════════════
+   SETTINGS PAGE
+═══════════════════════════════════════════ */
+.settings-section { margin-bottom: 24px; }
+.settings-title { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.setting-row {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; box-shadow: var(--shadow2);
+}
+.setting-name { font-size: 13px; font-weight: 500; }
+.setting-desc { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.toggle { width: 42px; height: 23px; background: var(--border); border-radius: 50px; position: relative; cursor: pointer; transition: background 0.3s; border: none; flex-shrink: 0; }
+.toggle.on { background: var(--accent2); }
+.toggle::after { content: ''; position: absolute; width: 17px; height: 17px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+.toggle.on::after { left: 22px; }
+.setting-tag { font-size: 11px; padding: 3px 10px; border-radius: 50px; background: rgba(0,220,255,0.08); color: var(--accent); border: 1px solid var(--border2); }
+
+/* ═══════════════════════════════════════════
+   TIP BLOCKS
+═══════════════════════════════════════════ */
+.tip-block { padding: 14px; background: var(--card2); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 8px; }
+.tip-block-title { font-weight: 600; margin-bottom: 3px; font-size: 13px; }
+.tip-block-body { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+/* ═══════════════════════════════════════════
+   ERROR BANNER
+═══════════════════════════════════════════ */
+.error-banner {
+  background: rgba(255,95,109,0.06); border: 1px solid rgba(255,95,109,0.2);
+  border-radius: 12px; padding: 12px 16px;
+  color: var(--accent3); font-size: 13px; margin-bottom: 18px; display: none;
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media (max-width: 1200px) {
+  .metrics-grid { grid-template-columns: repeat(2,1fr); }
+  .bottom-grid { grid-template-columns: 1fr; }
+  .hr-zones { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 768px) {
+  body { grid-template-columns: 0 1fr; }
+  .sidebar { display: none; }
+  .topbar, main { grid-column: 1; }
+  .metrics-grid { grid-template-columns: 1fr 1fr; }
+}
   </style>
 </head>
 <body>
 
-<!-- Sidebar -->
-<aside class="sidebar">
-  <div class="logo">Vital<span>AI</span></div>
-  <div class="user-pill">
-    <img id="userAvatar" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><rect width='36' height='36' fill='%2300e5ff'/><text x='18' y='24' font-size='16' text-anchor='middle' fill='%23050d1a'>U</text></svg>" alt="Avatar">
-    <div>
-      <div class="user-name" id="userName">Loading...</div>
-      <div class="user-email" id="userEmail">—</div>
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
+    </div>
+    <span class="logo-text">VitalAI</span>
+  </div>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M9 18l6-6-6-6"/>
+    </svg>
+  </button>
+
+  <div class="sidebar-user">
+    <img class="sidebar-avatar" id="userAvatar"
+      src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><rect width='36' height='36' fill='%2300dcff'/><text x='18' y='24' font-size='16' text-anchor='middle' fill='%23050d1a'>U</text></svg>" alt="Avatar">
+    <div class="sidebar-user-info">
+      <div class="sidebar-uname" id="userName">Loading...</div>
+      <div class="sidebar-uemail" id="userEmail">—</div>
     </div>
   </div>
-  <button class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</button>
-  <button class="nav-item" onclick="showPage('activity',this)"><span class="icon">🏃</span> Activity</button>
-  <button class="nav-item" onclick="showPage('heartrate',this)"><span class="icon">❤️</span> Heart Rate</button>
-  <button class="nav-item" onclick="showPage('sleep',this)"><span class="icon">😴</span> Sleep</button>
-  <button class="nav-item" onclick="showPage('ai',this)"><span class="icon">🤖</span> AI Assistant</button>
-  <a class="nav-item" href="/medications" style="color:var(--accent4);"><span class="icon">💊</span> Medications <span style="font-size:10px;background:rgba(255,179,71,0.15);border:1px solid rgba(255,179,71,0.3);border-radius:50px;padding:2px 7px;margin-left:4px">NEW</span></a>
-  <button class="nav-item" onclick="showPage('settings',this)"><span class="icon">⚙️</span> Settings</button>
+
+  <nav class="nav-items">
+
+    <button class="nav-item active" onclick="showPage('dashboard',this)" title="Dashboard">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </div>
+      <span class="nav-label">Dashboard</span>
+    </button>
+
+    <button class="nav-item" onclick="showPage('activity',this)" title="Activity">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <span class="nav-label">Activity</span>
+    </button>
+
+    <button class="nav-item" onclick="showPage('heartrate',this)" title="Heart Rate">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </div>
+      <span class="nav-label">Heart Rate</span>
+    </button>
+
+    <button class="nav-item" onclick="showPage('sleep',this)" title="Sleep">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </div>
+      <span class="nav-label">Sleep</span>
+    </button>
+
+    <button class="nav-item" onclick="showPage('ai',this)" title="AI Assistant">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+        </svg>
+      </div>
+      <span class="nav-label">AI Assistant</span>
+    </button>
+
+    <a class="nav-item" href="/medications" title="Medications">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.5 20H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H20a2 2 0 0 1 2 2v3"/>
+          <circle cx="18" cy="18" r="3"/><path d="m22 22-1.5-1.5"/>
+        </svg>
+      </div>
+      <span class="nav-label">Medications</span>
+    </a>
+
+    <a class="nav-item" href="/health-extras" title="Health Manager">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <span class="nav-label">Health Manager</span>
+      <span class="nav-badge">New</span>
+    </a>
+
+    <button class="nav-item" onclick="showPage('settings',this)" title="Settings">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </div>
+      <span class="nav-label">Settings</span>
+    </button>
+
+  </nav>
+
   <div class="sidebar-footer">
-    <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+    <a class="nav-item" href="/logout" title="Sign Out" style="color:var(--accent3)">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </div>
+      <span class="nav-label">Sign Out</span>
+    </a>
   </div>
 </aside>
 
-<!-- Topbar -->
+<!-- ═══════════ TOPBAR ═══════════ -->
 <header class="topbar">
-  <div>
+  <div class="topbar-left">
     <div class="topbar-title" id="topbarTitle">Health Dashboard</div>
-    <div class="last-updated" id="lastUpdated">Fetching data...</div>
+    <div class="topbar-sub" id="lastUpdated">Fetching data...</div>
   </div>
-  <button class="refresh-btn" onclick="loadHealthData()">
-    <span class="spin-icon">🔄</span> Refresh
-  </button>
+  <div class="topbar-right">
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme" id="themeBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="themeIcon">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+    <button class="refresh-btn" onclick="loadHealthData()">
+      <span class="spin-icon">↻</span> Refresh
+    </button>
+  </div>
 </header>
 
+<!-- ═══════════ MAIN ═══════════ -->
 <main>
 
   <!-- ══ DASHBOARD ══ -->
   <div class="page active" id="page-dashboard">
-    <div class="error-banner" id="errorBanner">⚠️ Could not load Google Fit data. Make sure Google Fit has recorded activity today.</div>
+    <div class="error-banner" id="errorBanner">⚠️ Could not load Google Fit data. Make sure Fitness API is enabled and Google Fit has activity today.</div>
+
     <div class="metrics-grid">
       <div class="metric-card steps">
-        <div class="metric-icon">🦶</div>
-        <div class="metric-label">Steps Today</div>
+        <div class="metric-top">
+          <div class="metric-label">Steps Today</div>
+          <div class="metric-icon-box" style="background:rgba(0,220,255,0.1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+              <path d="M13 4v4l3 3-4 5H8l-3-4 3-3V4"/><circle cx="12" cy="2" r="1"/>
+            </svg>
+          </div>
+        </div>
         <div><span class="metric-value" id="stepsVal" style="color:var(--accent)">—</span><span class="metric-unit">steps</span></div>
         <div class="metric-sub" id="stepsSub">Goal: 10,000</div>
-        <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="stepsBar" style="width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div></div></div>
+        <div class="progress-bar"><div class="progress-fill" id="stepsBar" style="width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div></div>
       </div>
+
       <div class="metric-card heart">
-        <div class="metric-icon">💓</div>
-        <div class="metric-label">Heart Rate</div>
+        <div class="metric-top">
+          <div class="metric-label">Heart Rate</div>
+          <div class="metric-icon-box" style="background:rgba(255,95,109,0.1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </div>
+        </div>
         <div><span class="metric-value" id="hrVal" style="color:var(--accent3)">—</span><span class="metric-unit">BPM</span></div>
         <div class="metric-sub" id="hrSub">Normal: 60–100</div>
-        <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="hrBar" style="width:0%;background:linear-gradient(90deg,var(--accent3),#ff9999)"></div></div></div>
+        <div class="progress-bar"><div class="progress-fill" id="hrBar" style="width:0%;background:linear-gradient(90deg,var(--accent3),#ff9999)"></div></div>
       </div>
-      <div class="metric-card calories">
-        <div class="metric-icon">🔥</div>
-        <div class="metric-label">Calories Burned</div>
+
+      <div class="metric-card cals">
+        <div class="metric-top">
+          <div class="metric-label">Calories Burned</div>
+          <div class="metric-icon-box" style="background:rgba(255,170,51,0.1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent4)" stroke-width="2">
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+            </svg>
+          </div>
+        </div>
         <div><span class="metric-value" id="calVal" style="color:var(--accent4)">—</span><span class="metric-unit">kcal</span></div>
         <div class="metric-sub">Active calories today</div>
-        <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="calBar" style="width:0%;background:linear-gradient(90deg,var(--accent4),#ffe082)"></div></div></div>
+        <div class="progress-bar"><div class="progress-fill" id="calBar" style="width:0%;background:linear-gradient(90deg,var(--accent4),#ffe082)"></div></div>
       </div>
+
       <div class="metric-card weight">
-        <div class="metric-icon">⚖️</div>
-        <div class="metric-label">Weight</div>
+        <div class="metric-top">
+          <div class="metric-label">Weight</div>
+          <div class="metric-icon-box" style="background:rgba(0,232,122,0.1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+            </svg>
+          </div>
+        </div>
         <div><span class="metric-value" id="weightVal" style="color:var(--accent2)">—</span><span class="metric-unit">kg</span></div>
-        <div class="metric-sub" id="weightSub">From Google Fit</div>
-        <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:60%;background:linear-gradient(90deg,var(--accent2),#80ffc8)"></div></div></div>
+        <div class="metric-sub">From Google Fit</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:60%;background:linear-gradient(90deg,var(--accent2),#80ffc8)"></div></div>
       </div>
     </div>
+
     <div class="bottom-grid">
       <div class="panel">
-        <div class="panel-title"><div class="status-dot"></div> Weekly Step Count</div>
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Weekly Step Count
+          </div>
+          <div class="live-pill"><div class="live-dot"></div>Live</div>
+        </div>
         <div class="chart-wrap"><canvas id="stepsChart"></canvas></div>
       </div>
+
       <div class="panel chat-panel">
-        <div class="panel-title">🤖 AI Health Assistant</div>
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+            AI Health Assistant
+          </div>
+        </div>
         <div class="chat-messages" id="chatMessages">
           <div class="msg ai"><div class="msg-bubble">Hello! 👋 I'm your AI Health Assistant. Ask me about your steps, heart rate, diet, sleep, or any health question!</div><div class="msg-time">Just now</div></div>
         </div>
@@ -243,98 +1004,104 @@
 
   <!-- ══ ACTIVITY ══ -->
   <div class="page" id="page-activity">
-    <div class="section-heading">🏃 Activity Tracker</div>
+    <div class="section-heading">Activity Tracker</div>
     <div class="activity-grid">
       <div class="activity-stat"><div class="big" id="actSteps" style="color:var(--accent)">—</div><div class="label">Steps Today</div></div>
       <div class="activity-stat"><div class="big" id="actCal" style="color:var(--accent4)">—</div><div class="label">Calories Burned</div></div>
-      <div class="activity-stat"><div class="big" id="actDist" style="color:var(--accent2)">—</div><div class="label">Est. Distance (km)</div></div>
+      <div class="activity-stat"><div class="big" id="actDist" style="color:var(--accent2)">—</div><div class="label">Distance (km)</div></div>
     </div>
     <div class="panel">
-      <div class="panel-title"><div class="status-dot"></div> 7-Day Step History</div>
+      <div class="panel-header">
+        <div class="panel-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> 7-Day Steps</div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
       <div class="chart-wrap"><canvas id="activityChart"></canvas></div>
     </div>
     <div class="panel">
-      <div class="panel-title">🔥 Weekly Calories</div>
+      <div class="panel-header"><div class="panel-title">🔥 Weekly Calories</div></div>
       <div class="chart-wrap"><canvas id="caloriesChart"></canvas></div>
     </div>
     <div class="panel">
-      <div class="panel-title">🎯 Daily Goals</div>
-      <div style="display:flex;flex-direction:column;gap:16px;">
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span>Steps Goal</span><span id="goalStepsText" style="color:var(--accent)">0 / 10,000</span></div>
-          <div class="progress-bar" style="height:8px;border-radius:8px;"><div class="progress-fill" id="goalStepsBar" style="width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));height:8px;border-radius:8px;"></div></div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span>Calorie Goal</span><span id="goalCalText" style="color:var(--accent4)">0 / 2000 kcal</span></div>
-          <div class="progress-bar" style="height:8px;border-radius:8px;"><div class="progress-fill" id="goalCalBar" style="width:0%;background:linear-gradient(90deg,var(--accent4),#ffe082);height:8px;border-radius:8px;"></div></div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span>Active Minutes</span><span style="color:var(--accent2)" id="goalMinText">— / 30 min</span></div>
-          <div class="progress-bar" style="height:8px;border-radius:8px;"><div class="progress-fill" id="goalMinBar" style="width:0%;background:linear-gradient(90deg,var(--accent2),#80ffc8);height:8px;border-radius:8px;"></div></div>
-        </div>
+      <div class="panel-header"><div class="panel-title">🎯 Daily Goals</div></div>
+      <div class="goal-item">
+        <div class="goal-row"><span>Steps Goal</span><span id="goalStepsText" style="color:var(--accent)">0 / 10,000</span></div>
+        <div class="goal-bar"><div class="goal-fill" id="goalStepsBar" style="width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div></div>
+      </div>
+      <div class="goal-item">
+        <div class="goal-row"><span>Calorie Goal</span><span id="goalCalText" style="color:var(--accent4)">0 / 2000 kcal</span></div>
+        <div class="goal-bar"><div class="goal-fill" id="goalCalBar" style="width:0%;background:linear-gradient(90deg,var(--accent4),#ffe082)"></div></div>
+      </div>
+      <div class="goal-item">
+        <div class="goal-row"><span>Active Minutes</span><span id="goalMinText" style="color:var(--accent2)">— / 30 min</span></div>
+        <div class="goal-bar"><div class="goal-fill" id="goalMinBar" style="width:0%;background:linear-gradient(90deg,var(--accent2),#80ffc8)"></div></div>
       </div>
     </div>
   </div>
 
   <!-- ══ HEART RATE ══ -->
   <div class="page" id="page-heartrate">
-    <div class="section-heading">❤️ Heart Rate Monitor</div>
-    <div class="hr-status-card">
-      <div class="hr-big" id="hrPageVal">—</div>
-      <div class="hr-label">BPM — Average Today</div>
-      <div><span class="hr-badge nodata" id="hrBadge">Waiting for data</span></div>
+    <div class="section-heading">Heart Rate Monitor</div>
+    <div class="hr-hero">
+      <div class="hr-glow"></div>
+      <div class="hr-bpm-wrap">
+        <div class="hr-bpm" id="hrPageVal">—</div>
+        <div class="hr-label">BPM — Average Today</div>
+        <div><span class="hr-badge nodata" id="hrBadge">Waiting for data</span></div>
+      </div>
+      <div class="hr-wave-wrap">
+        <canvas id="ecgCanvas"></canvas>
+      </div>
     </div>
+
     <div class="hr-zones">
-      <div class="hr-zone"><div class="zone-name">Resting</div><div class="zone-range" style="color:#a78bfa">60–100</div><div style="font-size:11px;color:var(--muted);margin-top:4px;">BPM</div></div>
-      <div class="hr-zone"><div class="zone-name">Fat Burn</div><div class="zone-range" style="color:var(--accent2)">100–140</div><div style="font-size:11px;color:var(--muted);margin-top:4px;">BPM</div></div>
-      <div class="hr-zone"><div class="zone-name">Cardio</div><div class="zone-range" style="color:var(--accent4)">140–170</div><div style="font-size:11px;color:var(--muted);margin-top:4px;">BPM</div></div>
-      <div class="hr-zone"><div class="zone-name">Peak</div><div class="zone-range" style="color:var(--accent3)">170+</div><div style="font-size:11px;color:var(--muted);margin-top:4px;">BPM</div></div>
+      <div class="hr-zone"><div class="zone-name">Resting</div><div class="zone-range" style="color:var(--violet)">60–100</div><div class="zone-unit">BPM</div></div>
+      <div class="hr-zone"><div class="zone-name">Fat Burn</div><div class="zone-range" style="color:var(--accent2)">100–140</div><div class="zone-unit">BPM</div></div>
+      <div class="hr-zone"><div class="zone-name">Cardio</div><div class="zone-range" style="color:var(--accent4)">140–170</div><div class="zone-unit">BPM</div></div>
+      <div class="hr-zone"><div class="zone-name">Peak</div><div class="zone-range" style="color:var(--accent3)">170+</div><div class="zone-unit">BPM</div></div>
     </div>
+
     <div class="panel">
-      <div class="panel-title">💡 Heart Health Tips</div>
+      <div class="panel-header"><div class="panel-title">💡 Heart Health Tips</div></div>
       <div class="tip-block"><div class="tip-block-title">💧 Stay Hydrated</div><div class="tip-block-body">Dehydration can raise your resting heart rate by 5–8 BPM. Drink 2–3L of water daily.</div></div>
       <div class="tip-block"><div class="tip-block-title">🧘 Manage Stress</div><div class="tip-block-body">High stress elevates cortisol which increases heart rate. Practice deep breathing or yoga daily.</div></div>
       <div class="tip-block"><div class="tip-block-title">🏋️ Exercise Regularly</div><div class="tip-block-body">Consistent aerobic exercise lowers your resting heart rate over time — a sign of improved fitness.</div></div>
-      <div class="tip-block"><div class="tip-block-title">⚠️ When to See a Doctor</div><div class="tip-block-body">If resting BPM is consistently above 100 or below 60 (without being an athlete), consult a physician.</div></div>
     </div>
   </div>
 
   <!-- ══ SLEEP ══ -->
   <div class="page" id="page-sleep">
-    <div class="section-heading">😴 Sleep Tracker</div>
+    <div class="section-heading">Sleep Tracker</div>
     <div class="sleep-grid">
-      <div class="sleep-card"><div class="big">7–9h</div><div class="lbl">Recommended sleep (WHO)</div></div>
-      <div class="sleep-card"><div class="big" style="color:var(--accent2)">22:30</div><div class="lbl">Ideal bedtime for adults</div></div>
-      <div class="sleep-card"><div class="big" style="color:var(--accent4)">06:30</div><div class="lbl">Ideal wake-up time</div></div>
+      <div class="sleep-card"><div class="big">7–9h</div><div class="lbl">Recommended (WHO)</div></div>
+      <div class="sleep-card"><div class="big" style="color:var(--accent2)">22:30</div><div class="lbl">Ideal Bedtime</div></div>
+      <div class="sleep-card"><div class="big" style="color:var(--accent4)">06:30</div><div class="lbl">Ideal Wake-up</div></div>
     </div>
     <div class="panel">
-      <div class="panel-title">📊 Sleep Stages Breakdown (Typical Adult)</div>
+      <div class="panel-header"><div class="panel-title">📊 Sleep Stages</div></div>
       <div class="chart-wrap"><canvas id="sleepChart"></canvas></div>
     </div>
     <div class="panel">
-      <div class="panel-title">💡 Sleep Improvement Tips</div>
-      <div class="sleep-tip"><div class="tip-icon">📱</div><div><div class="tip-title">No Screens 1 Hour Before Bed</div><div class="tip-body">Blue light from phones suppresses melatonin production by up to 50%, making it harder to fall asleep.</div></div></div>
-      <div class="sleep-tip"><div class="tip-icon">🌡️</div><div><div class="tip-title">Keep Your Room Cool (18–20°C)</div><div class="tip-body">A cooler room signals your body it's time to sleep. Use a fan or keep windows open.</div></div></div>
-      <div class="sleep-tip"><div class="tip-icon">⏰</div><div><div class="tip-title">Consistent Sleep Schedule</div><div class="tip-body">Going to bed and waking at the same time every day — even weekends — regulates your circadian rhythm.</div></div></div>
-      <div class="sleep-tip"><div class="tip-icon">☕</div><div><div class="tip-title">No Caffeine After 2 PM</div><div class="tip-body">Caffeine has a half-life of 5–6 hours. A 4 PM coffee still has half its caffeine active at 10 PM.</div></div></div>
-      <div class="sleep-tip"><div class="tip-icon">🧘</div><div><div class="tip-title">Relaxation Routine</div><div class="tip-body">10 minutes of deep breathing or meditation before bed reduces cortisol and helps you fall asleep faster.</div></div></div>
+      <div class="panel-header"><div class="panel-title">💡 Sleep Tips</div></div>
+      <div class="sleep-tip"><div class="tip-icon">📱</div><div><div class="tip-title">No Screens Before Bed</div><div class="tip-body">Blue light suppresses melatonin by up to 50%. Stop screens 1 hour before sleep.</div></div></div>
+      <div class="sleep-tip"><div class="tip-icon">🌡️</div><div><div class="tip-title">Keep Room Cool (18–20°C)</div><div class="tip-body">A cooler room signals your body it's time to sleep. Open windows or use a fan.</div></div></div>
+      <div class="sleep-tip"><div class="tip-icon">⏰</div><div><div class="tip-title">Consistent Schedule</div><div class="tip-body">Same sleep/wake time every day — even weekends — regulates your circadian rhythm.</div></div></div>
+      <div class="sleep-tip"><div class="tip-icon">☕</div><div><div class="tip-title">No Caffeine After 2 PM</div><div class="tip-body">Caffeine half-life is 5–6 hours. A 4 PM coffee still affects you at 10 PM.</div></div></div>
     </div>
   </div>
 
-  <!-- ══ AI ASSISTANT ══ -->
+  <!-- ══ AI ══ -->
   <div class="page" id="page-ai">
-    <div class="section-heading">🤖 AI Health Assistant</div>
+    <div class="section-heading">AI Health Assistant</div>
     <div class="panel">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-        <button class="quick-btn" onclick="quickAsk('How are my steps today?')" style="color:var(--accent)">My steps today</button>
-        <button class="quick-btn" onclick="quickAsk('How is my heart rate?')" style="color:var(--accent3);border-color:rgba(255,107,107,0.2);background:rgba(255,107,107,0.08)">Heart rate status</button>
-        <button class="quick-btn" onclick="quickAsk('Give me Indian diet tips')" style="color:var(--accent2);border-color:rgba(0,255,136,0.2);background:rgba(0,255,136,0.08)">Indian diet tips</button>
-        <button class="quick-btn" onclick="quickAsk('How can I sleep better?')" style="color:#a78bfa;border-color:rgba(167,139,250,0.2);background:rgba(167,139,250,0.08)">Sleep tips</button>
-        <button class="quick-btn" onclick="quickAsk('What exercise should I do today?')" style="color:var(--accent4);border-color:rgba(255,179,71,0.2);background:rgba(255,179,71,0.08)">Exercise advice</button>
-        <button class="quick-btn" onclick="quickAsk('What is a healthy BMI?')" style="color:var(--muted)">BMI info</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="quick-btn" onclick="quickAsk('How are my steps today?')">My steps today</button>
+        <button class="quick-btn" onclick="quickAsk('How is my heart rate?')" style="color:var(--accent3)">Heart rate status</button>
+        <button class="quick-btn" onclick="quickAsk('Give me Indian diet tips')" style="color:var(--accent2)">Indian diet tips</button>
+        <button class="quick-btn" onclick="quickAsk('How can I sleep better?')" style="color:var(--violet)">Sleep tips</button>
+        <button class="quick-btn" onclick="quickAsk('What exercise should I do today?')" style="color:var(--accent4)">Exercise advice</button>
       </div>
-      <div class="chat-messages" id="chatMessages2" style="height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px;margin-bottom:16px;">
-        <div class="msg ai"><div class="msg-bubble">Hi! 👋 I'm your personal AI Health Assistant. I have access to your Google Fit data and can answer questions about fitness, diet, sleep, and wellness. Use the quick buttons or type anything below!</div><div class="msg-time">Just now</div></div>
+      <div class="chat-messages" id="chatMessages2" style="height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px;margin-bottom:14px;">
+        <div class="msg ai"><div class="msg-bubble">Hi! 👋 I'm your AI Health Assistant. Use the quick buttons above or type anything below!</div><div class="msg-time">Just now</div></div>
       </div>
       <div class="chat-input-row">
         <input class="chat-input" id="chatInput2" type="text" placeholder="Ask anything about your health..."/>
@@ -345,229 +1112,437 @@
 
   <!-- ══ SETTINGS ══ -->
   <div class="page" id="page-settings">
-    <div class="section-heading">⚙️ Settings</div>
+    <div class="section-heading">Settings</div>
     <div class="settings-section">
       <div class="settings-title">Account</div>
-      <div class="setting-row">
-        <div><div class="setting-name" id="settingName">—</div><div class="setting-desc" id="settingEmail">—</div></div>
-        <span class="setting-tag">Google Account</span>
-      </div>
-      <div class="setting-row">
-        <div><div class="setting-name">Sign Out</div><div class="setting-desc">Disconnect and clear session</div></div>
-        <a href="/logout" style="background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);color:var(--accent3);padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;">Sign Out</a>
-      </div>
+      <div class="setting-row"><div><div class="setting-name" id="settingName">—</div><div class="setting-desc" id="settingEmail">—</div></div><span class="setting-tag">Google Account</span></div>
+      <div class="setting-row"><div><div class="setting-name">Sign Out</div><div class="setting-desc">Disconnect and clear session</div></div><a href="/logout" style="background:rgba(255,95,109,0.08);border:1px solid rgba(255,95,109,0.25);color:var(--accent3);padding:6px 16px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:500">Sign Out</a></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">Appearance</div>
+      <div class="setting-row"><div><div class="setting-name">Dark Mode</div><div class="setting-desc">Switch between dark and light theme</div></div><button class="toggle on" id="darkToggle" onclick="toggleTheme()"></button></div>
     </div>
     <div class="settings-section">
       <div class="settings-title">Notifications</div>
-      <div class="setting-row"><div><div class="setting-name">Daily Step Reminders</div><div class="setting-desc">Remind if under 5,000 steps by 5 PM</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+      <div class="setting-row"><div><div class="setting-name">Daily Step Reminders</div><div class="setting-desc">Alert if under 5,000 steps by 5 PM</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
       <div class="setting-row"><div><div class="setting-name">Heart Rate Alerts</div><div class="setting-desc">Alert when BPM is outside normal range</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
-      <div class="setting-row"><div><div class="setting-name">Sleep Reminder</div><div class="setting-desc">Remind you at your target bedtime</div></div><button class="toggle" onclick="this.classList.toggle('on')"></button></div>
     </div>
     <div class="settings-section">
       <div class="settings-title">Goals</div>
-      <div class="setting-row"><div><div class="setting-name">Daily Step Goal</div><div class="setting-desc">Current target</div></div><span class="setting-tag">10,000 steps</span></div>
+      <div class="setting-row"><div><div class="setting-name">Daily Step Goal</div><div class="setting-desc">Target step count</div></div><span class="setting-tag">10,000 steps</span></div>
       <div class="setting-row"><div><div class="setting-name">Calorie Goal</div><div class="setting-desc">Daily burn target</div></div><span class="setting-tag">2,000 kcal</span></div>
-      <div class="setting-row"><div><div class="setting-name">Sleep Goal</div><div class="setting-desc">Target sleep duration</div></div><span class="setting-tag">7.5 hrs</span></div>
     </div>
     <div class="settings-section">
-      <div class="settings-title">Data & Privacy</div>
-      <div class="setting-row"><div><div class="setting-name">Google Fit Connection</div><div class="setting-desc">Read-only access via OAuth 2.0</div></div><span class="setting-tag" style="background:rgba(0,255,136,0.1);color:var(--accent2);border-color:rgba(0,255,136,0.2);">✅ Connected</span></div>
-      <div class="setting-row"><div><div class="setting-name">Data Storage</div><div class="setting-desc">No health data stored on our servers</div></div><span class="setting-tag">Session Only</span></div>
+      <div class="settings-title">Privacy</div>
+      <div class="setting-row"><div><div class="setting-name">Google Fit Connection</div><div class="setting-desc">Read-only access via OAuth 2.0</div></div><span class="setting-tag" style="background:rgba(0,232,122,0.08);color:var(--accent2);border-color:rgba(0,232,122,0.2)">✓ Connected</span></div>
+      <div class="setting-row"><div><div class="setting-name">Data Storage</div><div class="setting-desc">No health data stored on servers</div></div><span class="setting-tag">Session Only</span></div>
     </div>
   </div>
 
 </main>
 
 <script>
-  let chartInst={}, healthData={};
+/* ═══════════════════════════════════
+   STATE
+═══════════════════════════════════ */
+let chartInst = {}, healthData = {}, ecgAnimId = null;
+const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
 
-  const pageNames={dashboard:'Health Dashboard',activity:'Activity Tracker',heartrate:'Heart Rate Monitor',sleep:'Sleep Tracker',ai:'AI Health Assistant',settings:'Settings'};
+const pageNames = {
+  dashboard:'Health Dashboard', activity:'Activity Tracker',
+  heartrate:'Heart Rate Monitor', sleep:'Sleep Tracker',
+  ai:'AI Health Assistant', settings:'Settings'
+};
 
-  function showPage(name, btn) {
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-    document.getElementById('page-'+name).classList.add('active');
-    btn.classList.add('active');
-    document.getElementById('topbarTitle').textContent=pageNames[name];
-    if(name==='activity') renderActivityCharts();
-    if(name==='sleep') renderSleepChart();
-    if(name==='heartrate') updateHRPage();
-    if(name==='settings') updateSettings();
+/* ═══════════════════════════════════
+   SIDEBAR TOGGLE
+═══════════════════════════════════ */
+function toggleSidebar() {
+  document.body.classList.toggle('sidebar-open');
+}
+
+/* ═══════════════════════════════════
+   THEME TOGGLE
+═══════════════════════════════════ */
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = isDark() ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('vitalai-theme', next);
+
+  // Update toggle in settings
+  const dt = document.getElementById('darkToggle');
+  if(dt) dt.classList.toggle('on', next === 'dark');
+
+  // Redraw charts with new colors
+  redrawAllCharts();
+}
+
+// Load saved theme
+const savedTheme = localStorage.getItem('vitalai-theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+if(savedTheme === 'light') {
+  const dt = document.getElementById('darkToggle');
+  if(dt) dt.classList.remove('on');
+}
+
+/* ═══════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════ */
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('topbarTitle').textContent = pageNames[name];
+
+  if(name==='activity')  renderActivityCharts();
+  if(name==='sleep')     renderSleepChart();
+  if(name==='heartrate') { updateHRPage(); startECG(); }
+  else stopECG();
+  if(name==='settings')  updateSettings();
+}
+
+/* ═══════════════════════════════════
+   USER
+═══════════════════════════════════ */
+async function loadUser() {
+  try {
+    const d = await(await fetch('/api/status')).json();
+    if(d.user) {
+      document.getElementById('userName').textContent = d.user.name || 'User';
+      document.getElementById('userEmail').textContent = d.user.email || '';
+      if(d.user.picture) document.getElementById('userAvatar').src = d.user.picture;
+    }
+  } catch(e){}
+}
+
+/* ═══════════════════════════════════
+   HEALTH DATA
+═══════════════════════════════════ */
+async function loadHealthData() {
+  const btn = document.querySelector('.refresh-btn');
+  btn.classList.add('spinning');
+  try {
+    const data = await(await fetch('/api/health-data')).json();
+    if(data.error) { document.getElementById('errorBanner').style.display='block'; return; }
+    document.getElementById('errorBanner').style.display='none';
+    healthData = data;
+    updateDashboard(data);
+    document.getElementById('lastUpdated').textContent = 'Updated: ' + data.last_updated;
+  } catch(e) {
+    document.getElementById('errorBanner').style.display='block';
+  } finally {
+    btn.classList.remove('spinning');
+  }
+}
+
+function set(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function setW(id,w){const el=document.getElementById(id);if(el)el.style.width=w+'%';}
+
+function updateDashboard(data) {
+  const steps = data.steps || 0;
+  set('stepsVal', steps.toLocaleString());
+  setW('stepsBar', Math.min((steps/10000)*100,100));
+  set('stepsSub', steps>=10000 ? '✅ Goal reached!' : `${(10000-steps).toLocaleString()} to goal`);
+
+  const hr = data.heart_rate;
+  if(hr) {
+    set('hrVal', hr);
+    setW('hrBar', Math.min(((hr-40)/80)*100,100));
+    set('hrSub', hr>=60&&hr<=100 ? '✅ Normal' : '⚠️ Consult doctor');
+  } else {
+    set('hrVal','N/A'); set('hrSub','No data today');
   }
 
-  async function loadUser() {
-    try {
-      const d=await(await fetch('/api/status')).json();
-      if(d.user){
-        document.getElementById('userName').textContent=d.user.name||'User';
-        document.getElementById('userEmail').textContent=d.user.email||'';
-        if(d.user.picture) document.getElementById('userAvatar').src=d.user.picture;
+  const cal = data.calories || 0;
+  set('calVal', Math.round(cal).toLocaleString());
+  setW('calBar', Math.min((cal/2000)*100,100));
+  set('weightVal', data.weight || 'N/A');
+
+  renderStepsChart(data.weekly_steps || []);
+}
+
+/* ═══════════════════════════════════
+   CHART HELPERS
+═══════════════════════════════════ */
+function chartColors() {
+  return isDark()
+    ? { grid:'rgba(255,255,255,0.05)', tick:'#6b8da8', tooltip:'#0f1e35', tooltipBorder:'rgba(0,220,255,0.2)', tooltipTitle:'#00dcff', tooltipBody:'#e4f0fa' }
+    : { grid:'rgba(0,0,0,0.06)', tick:'#5a7399', tooltip:'#ffffff', tooltipBorder:'rgba(26,111,245,0.2)', tooltipTitle:'#1a6ff5', tooltipBody:'#0d1f3c' };
+}
+
+function baseChartOptions(label, cc) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    animation: { duration: 1000, easing: 'easeInOutQuart' },
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor: cc.tooltip,
+        borderColor: cc.tooltipBorder, borderWidth:1,
+        titleColor: cc.tooltipTitle, bodyColor: cc.tooltipBody,
+        padding:10, cornerRadius:10,
+        callbacks:{label:c=>` ${c.parsed.y.toLocaleString()} ${label.toLowerCase()}`}
       }
-    } catch(e){}
-  }
-
-  async function loadHealthData() {
-    const btn=document.querySelector('.refresh-btn');
-    btn.classList.add('spinning');
-    try {
-      const data=await(await fetch('/api/health-data')).json();
-      if(data.error){document.getElementById('errorBanner').style.display='block';return;}
-      document.getElementById('errorBanner').style.display='none';
-      healthData=data;
-      updateDashboard(data);
-      document.getElementById('lastUpdated').textContent='Updated: '+data.last_updated;
-    } catch(e){document.getElementById('errorBanner').style.display='block';}
-    finally{btn.classList.remove('spinning');}
-  }
-
-  function updateDashboard(d) {
-    const steps=d.steps||0;
-    set('stepsVal',steps.toLocaleString());
-    setW('stepsBar',Math.min((steps/10000)*100,100));
-    set('stepsSub',steps>=10000?'✅ Goal reached!':`${(10000-steps).toLocaleString()} to goal`);
-    const hr=d.heart_rate;
-    if(hr){set('hrVal',hr);setW('hrBar',Math.min(((hr-40)/80)*100,100));set('hrSub',hr>=60&&hr<=100?'✅ Normal':'⚠️ Consult doctor');}
-    else{set('hrVal','N/A');set('hrSub','No data today');}
-    const cal=d.calories||0;
-    set('calVal',Math.round(cal).toLocaleString());
-    setW('calBar',Math.min((cal/2000)*100,100));
-    set('weightVal',d.weight||'N/A');
-    renderChart('stepsChart','bar',d.weekly_steps||[],'Steps','rgba(0,229,255,0.85)','rgba(0,229,255,0.1)');
-  }
-
-  function set(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
-  function setW(id,w){const el=document.getElementById(id);if(el)el.style.width=w+'%';}
-
-  function mkBarDataset(weekly,color1,color2){
-    return [{label:'Steps',data:weekly.length?weekly.map(d=>d.steps):[0,0,0,0,0,0,0],
-      backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,color1);g.addColorStop(1,color2);return g;},
-      borderRadius:8,borderSkipped:false}];
-  }
-
-  function renderChart(canvasId,type,weekly,label,c1,c2){
-    const ctx=document.getElementById(canvasId);
-    if(!ctx)return;
-    if(chartInst[canvasId])chartInst[canvasId].destroy();
-    const labels=weekly.length?weekly.map(d=>d.day):['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    const data=weekly.length?weekly.map(d=>d.steps):[0,0,0,0,0,0,0];
-    chartInst[canvasId]=new Chart(ctx.getContext('2d'),{
-      type,
-      data:{labels,datasets:type==='bar'?mkBarDataset(weekly,c1,c2):[{label,data,borderColor:c1,backgroundColor:'rgba(255,179,71,0.1)',borderWidth:2,fill:true,tension:0.4,pointBackgroundColor:c1,pointRadius:4}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1f38',borderColor:'rgba(0,229,255,0.2)',borderWidth:1,titleColor:'#00e5ff',bodyColor:'#e8f4f8',callbacks:{label:c=>` ${c.parsed.y.toLocaleString()} ${label.toLowerCase()}`}}},
-        scales:{x:{grid:{display:false},ticks:{color:'#7a9bb5',font:{family:'DM Sans'}},border:{display:false}},
-          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7a9bb5',font:{family:'DM Sans'},callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v},border:{display:false}}}}
-    });
-  }
-
-  function renderActivityCharts(){
-    const steps=healthData.steps||0, cal=healthData.calories||0, weekly=healthData.weekly_steps||[];
-    set('actSteps',steps.toLocaleString());
-    set('actCal',Math.round(cal).toLocaleString());
-    set('actDist',((steps*0.762)/1000).toFixed(2));
-    set('goalStepsText',`${steps.toLocaleString()} / 10,000`);
-    setW('goalStepsBar',Math.min((steps/10000)*100,100));
-    set('goalCalText',`${Math.round(cal).toLocaleString()} / 2000 kcal`);
-    setW('goalCalBar',Math.min((cal/2000)*100,100));
-    const mins=Math.round(steps/100);
-    set('goalMinText',`${mins} / 30 min`);
-    setW('goalMinBar',Math.min((mins/30)*100,100));
-    renderChart('activityChart','bar',weekly,'Steps','rgba(0,229,255,0.85)','rgba(0,229,255,0.1)');
-    // Calories line chart
-    const calCtx=document.getElementById('caloriesChart');
-    if(calCtx){
-      if(chartInst['caloriesChart'])chartInst['caloriesChart'].destroy();
-      chartInst['caloriesChart']=new Chart(calCtx.getContext('2d'),{
-        type:'line',
-        data:{labels:weekly.length?weekly.map(d=>d.day):['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
-          datasets:[{label:'Calories',data:weekly.length?weekly.map(d=>Math.round(d.steps*0.04)):[0,0,0,0,0,0,0],
-            borderColor:'#ffb347',backgroundColor:'rgba(255,179,71,0.1)',borderWidth:2,fill:true,tension:0.4,pointBackgroundColor:'#ffb347',pointRadius:4}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1f38',borderColor:'rgba(0,229,255,0.2)',borderWidth:1,titleColor:'#00e5ff',bodyColor:'#e8f4f8'}},
-          scales:{x:{grid:{display:false},ticks:{color:'#7a9bb5',font:{family:'DM Sans'}},border:{display:false}},
-            y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7a9bb5',font:{family:'DM Sans'}},border:{display:false}}}}
-      });
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{color:cc.tick,font:{family:'Inter',size:11}},border:{display:false}},
+      y:{grid:{color:cc.grid},ticks:{color:cc.tick,font:{family:'Inter',size:11},callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v},border:{display:false}}
     }
-  }
+  };
+}
 
-  function updateHRPage(){
-    const hr=healthData.heart_rate;
-    const badge=document.getElementById('hrBadge');
-    if(hr){
-      set('hrPageVal',hr);
-      if(hr>=60&&hr<=100){badge.textContent='✅ Normal Range';badge.className='hr-badge normal';}
-      else{badge.textContent='⚠️ Outside Normal — Consult Doctor';badge.className='hr-badge warning';}
-    } else {
-      set('hrPageVal','—');
-      badge.textContent='No heart rate data from Google Fit today';
-      badge.className='hr-badge nodata';
+function renderStepsChart(weekly) {
+  const cc = chartColors();
+  const ctx = document.getElementById('stepsChart');
+  if(!ctx) return;
+  if(chartInst.stepsChart) chartInst.stepsChart.destroy();
+
+  const labels = weekly.length ? weekly.map(d=>d.day) : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const values = weekly.length ? weekly.map(d=>d.steps) : [0,0,0,0,0,0,0];
+  const maxVal = Math.max(...values, 1);
+
+  chartInst.stepsChart = new Chart(ctx.getContext('2d'), {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'Steps',
+        data: values,
+        backgroundColor: ctx2 => {
+          const g = ctx2.chart.ctx.createLinearGradient(0, 0, 0, 240);
+          g.addColorStop(0, isDark() ? 'rgba(0,220,255,0.85)' : 'rgba(26,111,245,0.85)');
+          g.addColorStop(1, isDark() ? 'rgba(0,220,255,0.1)' : 'rgba(26,111,245,0.1)');
+          return g;
+        },
+        borderRadius:10, borderSkipped:false,
+        hoverBackgroundColor: isDark() ? 'rgba(0,232,122,0.85)' : 'rgba(0,184,96,0.85)',
+      }]
+    },
+    options:{
+      ...baseChartOptions('Steps', cc),
+      animation:{ duration:1200, easing:'easeOutBounce' }
     }
-  }
-
-  function renderSleepChart(){
-    const ctx=document.getElementById('sleepChart');
-    if(!ctx)return;
-    if(chartInst['sleepChart'])chartInst['sleepChart'].destroy();
-    chartInst['sleepChart']=new Chart(ctx.getContext('2d'),{
-      type:'doughnut',
-      data:{labels:['Deep Sleep','REM Sleep','Light Sleep','Awake'],
-        datasets:[{data:[20,25,45,10],backgroundColor:['#a78bfa','#00e5ff','#00ff88','rgba(255,255,255,0.08)'],borderWidth:0}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{
-        legend:{position:'right',labels:{color:'#7a9bb5',padding:16,font:{family:'DM Sans'}}},
-        tooltip:{backgroundColor:'#0f1f38',borderColor:'rgba(0,229,255,0.2)',borderWidth:1,titleColor:'#00e5ff',bodyColor:'#e8f4f8',callbacks:{label:c=>` ${c.label}: ${c.parsed}%`}}}}
-    });
-  }
-
-  function updateSettings(){
-    set('settingName',document.getElementById('userName').textContent);
-    set('settingEmail',document.getElementById('userEmail').textContent);
-  }
-
-  // Chat
-  function getTime(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
-
-  function appendMsg(text,role,cid){
-    const c=document.getElementById(cid);
-    const d=document.createElement('div'); d.className=`msg ${role}`;
-    const b=document.createElement('div'); b.className='msg-bubble';
-    b.innerHTML=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-    const t=document.createElement('div'); t.className='msg-time'; t.textContent=getTime();
-    d.appendChild(b); d.appendChild(t); c.appendChild(d); c.scrollTop=c.scrollHeight;
-  }
-
-  function showTypingIn(cid,tid){
-    const c=document.getElementById(cid);
-    const d=document.createElement('div'); d.className='msg ai'; d.id=tid;
-    d.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
-    c.appendChild(d); c.scrollTop=c.scrollHeight;
-  }
-
-  async function sendChat(inputId,cid,tid){
-    const inp=document.getElementById(inputId);
-    const text=inp.value.trim(); if(!text)return;
-    inp.value='';
-    appendMsg(text,'user',cid);
-    showTypingIn(cid,tid);
-    try{
-      const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
-      const data=await res.json();
-      document.getElementById(tid)?.remove();
-      appendMsg(data.reply,'ai',cid);
-    }catch(e){
-      document.getElementById(tid)?.remove();
-      appendMsg('Connection error. Please try again.','ai',cid);
-    }
-  }
-
-  function sendMessage(){sendChat('chatInput','chatMessages','t1');}
-  function sendMessage2(){sendChat('chatInput2','chatMessages2','t2');}
-  function quickAsk(q){document.getElementById('chatInput2').value=q;sendMessage2();}
-
-  document.addEventListener('DOMContentLoaded',()=>{
-    document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage();});
-    document.getElementById('chatInput2').addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage2();});
   });
+}
 
-  loadUser();
-  loadHealthData();
+function redrawAllCharts() {
+  if(healthData.weekly_steps) renderStepsChart(healthData.weekly_steps);
+  if(document.getElementById('page-activity').classList.contains('active')) renderActivityCharts();
+  if(document.getElementById('page-sleep').classList.contains('active')) renderSleepChart();
+}
+
+function renderActivityCharts() {
+  const steps=healthData.steps||0, cal=healthData.calories||0, weekly=healthData.weekly_steps||[];
+  set('actSteps',steps.toLocaleString());
+  set('actCal',Math.round(cal).toLocaleString());
+  set('actDist',((steps*0.762)/1000).toFixed(2));
+  set('goalStepsText',`${steps.toLocaleString()} / 10,000`);
+  setW('goalStepsBar',Math.min((steps/10000)*100,100));
+  set('goalCalText',`${Math.round(cal).toLocaleString()} / 2000 kcal`);
+  setW('goalCalBar',Math.min((cal/2000)*100,100));
+  const mins=Math.round(steps/100);
+  set('goalMinText',`${mins} / 30 min`);
+  setW('goalMinBar',Math.min((mins/30)*100,100));
+
+  const cc = chartColors();
+
+  // Steps bar chart
+  const actCtx = document.getElementById('activityChart');
+  if(actCtx){
+    if(chartInst.activityChart) chartInst.activityChart.destroy();
+    chartInst.activityChart = new Chart(actCtx.getContext('2d'),{
+      type:'bar',
+      data:{labels:weekly.length?weekly.map(d=>d.day):['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        datasets:[{label:'Steps',data:weekly.length?weekly.map(d=>d.steps):[0,0,0,0,0,0,0],
+          backgroundColor:ctx2=>{const g=ctx2.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,isDark()?'rgba(0,220,255,0.85)':'rgba(26,111,245,0.85)');g.addColorStop(1,isDark()?'rgba(0,220,255,0.08)':'rgba(26,111,245,0.08)');return g;},
+          borderRadius:10,borderSkipped:false}]},
+      options:baseChartOptions('Steps',cc)
+    });
+  }
+
+  // Calories line chart
+  const calCtx = document.getElementById('caloriesChart');
+  if(calCtx){
+    if(chartInst.caloriesChart) chartInst.caloriesChart.destroy();
+    const calData = weekly.length?weekly.map(d=>Math.round(d.steps*0.04)):[0,0,0,0,0,0,0];
+    chartInst.caloriesChart = new Chart(calCtx.getContext('2d'),{
+      type:'line',
+      data:{labels:weekly.length?weekly.map(d=>d.day):['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        datasets:[{label:'Calories',data:calData,
+          borderColor:isDark()?'#ffaa33':'#e07800',
+          backgroundColor:ctx2=>{const g=ctx2.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,isDark()?'rgba(255,170,51,0.3)':'rgba(224,120,0,0.2)');g.addColorStop(1,'transparent');return g;},
+          borderWidth:2.5,fill:true,tension:0.45,
+          pointBackgroundColor:isDark()?'#ffaa33':'#e07800',
+          pointRadius:5,pointHoverRadius:7,
+          pointBorderColor:isDark()?'#060d18':'#fff',pointBorderWidth:2}]},
+      options:{...baseChartOptions('Calories',cc)}
+    });
+  }
+}
+
+function updateHRPage() {
+  const hr = healthData.heart_rate;
+  const badge = document.getElementById('hrBadge');
+  if(hr){
+    set('hrPageVal', hr);
+    if(hr>=60&&hr<=100){badge.textContent='✅ Normal Range';badge.className='hr-badge normal';}
+    else{badge.textContent='⚠️ Outside Normal — Consult Doctor';badge.className='hr-badge warning';}
+  } else {
+    set('hrPageVal','—');
+    badge.textContent='No heart rate data from Google Fit today';
+    badge.className='hr-badge nodata';
+  }
+}
+
+function renderSleepChart() {
+  const ctx = document.getElementById('sleepChart');
+  if(!ctx)return;
+  if(chartInst.sleepChart) chartInst.sleepChart.destroy();
+  const cc = chartColors();
+  chartInst.sleepChart = new Chart(ctx.getContext('2d'),{
+    type:'doughnut',
+    data:{labels:['Deep Sleep','REM Sleep','Light Sleep','Awake'],
+      datasets:[{data:[20,25,45,10],
+        backgroundColor:isDark()
+          ?['#9d7eff','#00dcff','#00e87a','rgba(255,255,255,0.08)']
+          :['#6d4fd4','#1a6ff5','#00b860','rgba(0,0,0,0.07)'],
+        borderWidth:0, hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      animation:{animateRotate:true,duration:1200,easing:'easeInOutQuart'},
+      plugins:{
+        legend:{position:'right',labels:{color:cc.tick,padding:16,font:{family:'Inter',size:12},boxWidth:12,borderRadius:4}},
+        tooltip:{backgroundColor:cc.tooltip,borderColor:cc.tooltipBorder,borderWidth:1,titleColor:cc.tooltipTitle,bodyColor:cc.tooltipBody,cornerRadius:10,callbacks:{label:c=>` ${c.label}: ${c.parsed}%`}}
+      }
+    }
+  });
+}
+
+function updateSettings() {
+  set('settingName', document.getElementById('userName').textContent);
+  set('settingEmail', document.getElementById('userEmail').textContent);
+}
+
+/* ═══════════════════════════════════
+   ANIMATED ECG WAVE
+═══════════════════════════════════ */
+function startECG() {
+  stopECG();
+  const canvas = document.getElementById('ecgCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  canvas.width = W; canvas.height = H;
+
+  const accentColor = isDark() ? '#ff5f6d' : '#e53535';
+  let offset = 0;
+  const speed = 2;
+
+  // ECG shape template (normalized 0–1 for y, 0–1 for x segment)
+  function ecgY(x) {
+    const p = ((x % 120) + 120) % 120;
+    if(p < 40)  return 0.5;
+    if(p < 48)  return 0.5 + (p-40)/8 * 0.08;
+    if(p < 52)  return 0.58 - (p-48)/4 * 0.42;
+    if(p < 54)  return 0.16 + (p-52)/2 * 0.7;
+    if(p < 58)  return 0.86 - (p-54)/4 * 0.36;
+    if(p < 64)  return 0.5 + (64-p)/6 * 0.04;
+    if(p < 72)  return 0.5 - (p-64)/8 * 0.06;
+    if(p < 80)  return 0.44 + (p-72)/8 * 0.06;
+    return 0.5;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Glow
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = accentColor;
+
+    // Trail gradient
+    const grad = ctx.createLinearGradient(0,0,W,0);
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(0.6, accentColor + '88');
+    grad.addColorStop(1, accentColor);
+
+    ctx.beginPath();
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    for(let x = 0; x <= W; x++) {
+      const y = ecgY(x + offset) * H;
+      if(x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    offset = (offset + speed) % 120;
+    ecgAnimId = requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
+function stopECG() {
+  if(ecgAnimId) { cancelAnimationFrame(ecgAnimId); ecgAnimId = null; }
+}
+
+/* ═══════════════════════════════════
+   CHAT
+═══════════════════════════════════ */
+function getTime(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+
+function appendMsg(text,role,cid){
+  const c=document.getElementById(cid);
+  const d=document.createElement('div'); d.className=`msg ${role}`;
+  const b=document.createElement('div'); b.className='msg-bubble';
+  b.innerHTML=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  const t=document.createElement('div'); t.className='msg-time'; t.textContent=getTime();
+  d.appendChild(b); d.appendChild(t); c.appendChild(d); c.scrollTop=c.scrollHeight;
+}
+
+function showTypingIn(cid,tid){
+  const c=document.getElementById(cid);
+  const d=document.createElement('div'); d.className='msg ai'; d.id=tid;
+  d.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
+  c.appendChild(d); c.scrollTop=c.scrollHeight;
+}
+
+async function sendChat(inputId,cid,tid){
+  const inp=document.getElementById(inputId);
+  const text=inp.value.trim(); if(!text)return;
+  inp.value='';
+  appendMsg(text,'user',cid);
+  showTypingIn(cid,tid);
+  try{
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    const data=await res.json();
+    document.getElementById(tid)?.remove();
+    appendMsg(data.reply,'ai',cid);
+  }catch(e){
+    document.getElementById(tid)?.remove();
+    appendMsg('Connection error. Please try again.','ai',cid);
+  }
+}
+
+function sendMessage(){sendChat('chatInput','chatMessages','t1');}
+function sendMessage2(){sendChat('chatInput2','chatMessages2','t2');}
+function quickAsk(q){document.getElementById('chatInput2').value=q;sendMessage2();}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage();});
+  document.getElementById('chatInput2').addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage2();});
+});
+
+/* ═══════════════════════════════════
+   INIT
+═══════════════════════════════════ */
+loadUser();
+loadHealthData();
 </script>
 </body>
 </html>

@@ -1,0 +1,165 @@
+import { motion } from "framer-motion";
+
+export default function App() {
+  return (
+    <div className="bg-[#FAF8F4] text-[#2C2A26] font-sans">
+
+      {/* NAVBAR */}
+      <nav className="fixed w-full backdrop-blur-xl bg-white/60 px-10 py-4 flex justify-between z-50">
+        <h1 className="text-2xl italic font-serif">Vitae</h1>
+        <div className="flex gap-8 items-center">
+          <span>Services</span>
+          <span>Integrations</span>
+          <span>Family</span>
+          <span>Reviews</span>
+          <button className="bg-[#7C9B7E] text-white px-5 py-2 rounded-full hover:scale-105 transition">
+            Start free trial
+          </button>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section className="min-h-screen flex items-center justify-between px-10 pt-32">
+
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+          className="max-w-xl"
+        >
+          <div className="bg-[#E8CFCF] inline-block px-3 py-1 rounded-full mb-6">
+            Live Health Sync
+          </div>
+
+          <h1 className="text-5xl italic font-serif leading-tight">
+            Your health, beautifully understood
+          </h1>
+
+          <p className="mt-6 text-lg text-gray-600">
+            Experience clarity, calm, and control in your wellness journey.
+          </p>
+
+          <div className="flex gap-6 mt-6">
+            <span>98% goal</span>
+            <span>4.9★</span>
+            <span>2 min/day</span>
+          </div>
+
+          <div className="flex gap-4 mt-8">
+            <button className="bg-[#7C9B7E] text-white px-6 py-3 rounded-full">
+              Start free trial
+            </button>
+            <button className="border px-6 py-3 rounded-full">
+              Learn more
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Floating UI */}
+        <motion.div
+          animate={{ y: [0, -10, 0] }}
+          transition={{ repeat: Infinity, duration: 4 }}
+          className="relative"
+        >
+          <div className="w-64 h-[520px] bg-white rounded-3xl shadow-2xl"></div>
+
+          <div className="absolute -left-16 top-20 bg-white p-3 rounded-xl shadow-lg">
+            Heart synced ❤️
+          </div>
+
+          <div className="absolute -right-16 bottom-20 bg-white p-3 rounded-xl shadow-lg">
+            Doctor booked
+          </div>
+        </motion.div>
+
+      </section>
+
+      {/* SERVICES */}
+      <section className="px-10 py-20">
+        <h2 className="text-3xl font-serif mb-10">Services</h2>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {[
+            "Smart Food Logging",
+            "Goal Tracking",
+            "Medication Tracker",
+            "Family Health Hub",
+            "Connect with Doctors",
+            "Order Medicines"
+          ].map((item, i) => (
+            <motion.div
+              key={i}
+              whileHover={{ y: -8 }}
+              className="p-6 bg-white rounded-2xl shadow-md hover:shadow-xl transition"
+            >
+              <h3 className="font-serif text-xl mb-2">{item}</h3>
+              <p className="text-gray-500 text-sm">
+                Premium health experience designed for simplicity.
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* INTEGRATIONS */}
+      <section className="px-10 py-20 flex flex-col md:flex-row gap-10">
+        <div className="max-w-md">
+          <h2 className="text-3xl font-serif mb-4">
+            Seamless health ecosystem
+          </h2>
+          <p className="text-gray-600">
+            Sync all your health platforms in one place.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {["Google Fit","Apple Health","Garmin","Fitbit","Oura","Withings","Samsung","MyFitnessPal"]
+            .map((item,i)=>(
+              <div key={i} className="bg-white/60 backdrop-blur-xl p-4 rounded-xl text-center shadow">
+                {item}
+              </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAMILY */}
+      <section className="px-10 py-20 bg-[#7C9B7E]/10 rounded-3xl mx-10">
+        <h2 className="text-3xl font-serif mb-6">Family Health Hub</h2>
+
+        <div className="flex flex-col md:flex-row gap-6">
+          {["Father - Stable","Mother - Good","Child - Active"].map((m,i)=>(
+            <div key={i} className="bg-white p-6 rounded-xl shadow">
+              {m}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* TESTIMONIAL */}
+      <section className="bg-[#2C2A26] text-white px-10 py-20 mt-20">
+        <h2 className="text-3xl font-serif mb-10">What users say</h2>
+
+        <div className="flex flex-col md:flex-row gap-6">
+          {["Absolutely transformative","Feels premium","Best health app"]
+            .map((t,i)=>(
+              <div key={i} className="bg-white/10 p-6 rounded-xl">
+                “{t}” ★★★★★
+              </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="text-center py-20 bg-gradient-to-r from-[#7C9B7E]/20 to-transparent">
+        <h2 className="text-4xl font-serif">
+          Start your journey with <span className="text-[#7C9B7E]">Vitae</span>
+        </h2>
+
+        <button className="mt-6 bg-[#7C9B7E] text-white px-6 py-3 rounded-full">
+          Start free trial
+        </button>
+      </section>
+
+    </div>
+  );
+}

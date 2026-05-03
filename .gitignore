@@ -1,5 +1,15 @@
+# Secrets
 .env
-backend/medications.db
-backend/__pycache__/
+
+# Databases (auto-created on startup)
+backend/*.db
+
+# Python cache
+__pycache__/
 *.pyc
-*.db
+*.pyo
+*.pyd
+.Python
+
+# Render/deployment
+.render/

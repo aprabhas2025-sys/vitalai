@@ -882,7 +882,7 @@
     el.style.display='block';
     el.innerHTML='<div style="padding:12px;color:var(--muted);font-size:13px">Searching...</div>';
     try {
-      const results = await(await fetch(`/api/nutrition/foods/search?q=${encodeURIComponent(q)}`)).json();
+      const results = await safeFetch(`/api/nutrition/foods/search?q=${encodeURIComponent(q)}`) || [];
       if(!results.length){
         el.innerHTML=`<div style="padding:14px;color:var(--muted);font-size:13px;text-align:center">
           🔍 No results for "<strong>${q}</strong>"<br>
@@ -1027,7 +1027,7 @@
     const el = document.getElementById('historyList');
     el.innerHTML = '<div class="loading-text">Loading records...</div>';
     try {
-      const records = await(await fetch(url)).json();
+      const records = await safeFetch(url) || [];
       if(!records.length){
         const typeLabel = type ? type.charAt(0).toUpperCase()+type.slice(1)+'s' : 'medical records';
         el.innerHTML=`<div class="empty-state"><div class="es-icon">📋</div><div class="es-text">No ${typeLabel} found.<br>Click "+ Add Record" to add one.</div></div>`;
@@ -1094,9 +1094,13 @@
   // ══════════════════ INSURANCE ══════════════════
   async function loadInsurance() {
     const [records, providers] = await Promise.all([
-      fetch('/api/insurance').then(r=>r.json()),
-      fetch('/api/insurance/providers').then(r=>r.json())
+      safeFetch('/api/insurance'),
+      safeFetch('/api/insurance/providers')
+      
     ]);
+        if (!records || !providers) return;
+    
+
 
     // Populate provider dropdown
     const sel = document.getElementById('insProvider');
@@ -1219,11 +1223,16 @@
   }
 
   // ══════════════════ DOCTORS ══════════════════
-  async function loadDoctors() {
-    const [doctors, meta] = await Promise.all([
-      fetch('/api/doctors').then(r=>r.json()),
-      fetch('/api/doctors/meta').then(r=>r.json())
-    ]);
+ async function loadDoctors() {
+  const [doctors, meta] = await Promise.all([
+    safeFetch('/api/doctors'),
+    safeFetch('/api/doctors/meta')
+  ]);
+
+  if (!doctors || !meta) return;
+
+  // rest of your existing code stays unchanged
+}
 
     // Populate dropdowns
     document.getElementById('dcSpecialty').innerHTML = meta.specialties.map(s=>`<option>${s}</option>`).join('');
@@ -1289,7 +1298,7 @@
     const q=document.getElementById('platformSearch').value.trim();
     const city=document.getElementById('platformCity').value;
     if(!q){toast('Enter a search term','warning');return;}
-    const data = await(await fetch(`/api/platform/search?q=${encodeURIComponent(q)}&city=${city}`)).json();
+    const data = await safeFetch(`/api/platform/search?q=${encodeURIComponent(q)}&city=${city}`) || {};
     document.getElementById('platformLinks').innerHTML = `
       <div class="panel-title" style="margin-bottom:12px">🔍 Search results for "${q}" in ${city}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
@@ -1314,7 +1323,7 @@
 
   // ══════════════════ PREFERENCES ══════════════════
   async function loadPreferences() {
-    const prefs = await(await fetch('/api/preferences')).json();
+    const prefs = await safeFetch('/api/preferences') || {};
     if(prefs.diet_type) document.getElementById('prefDiet').value = prefs.diet_type;
     if(prefs.state) document.getElementById('prefState').value = prefs.state;
     if(prefs.city) document.getElementById('prefCity').value = prefs.city;

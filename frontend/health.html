@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VitalAI — Health</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+/* ═══ TOKENS ═══ */
+[data-theme="dark"]{
+  --bg:#060d18;--bg2:#080f1e;--surface:#0b1628;--card:#0f1e35;--card2:#0d1a2f;
+  --glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.07);--border2:rgba(0,220,255,0.18);
+  --text:#e4f0fa;--text2:#6b8da8;--text3:#4a6880;
+  --accent:#00dcff;--accent2:#00e87a;--accent3:#ff5f6d;--accent4:#ffaa33;--violet:#9d7eff;
+  --sidebar-w:72px;--sidebar-open:240px;
+  --shadow:0 8px 32px rgba(0,0,0,0.5);--shadow2:0 2px 12px rgba(0,0,0,0.3);
+  --inset:inset 0 1px 0 rgba(255,255,255,0.05);
+}
+[data-theme="light"]{
+  --bg:#f0f4fb;--bg2:#e8eef8;--surface:#ffffff;--card:#ffffff;--card2:#f6f9ff;
+  --glass:rgba(255,255,255,0.7);--border:rgba(30,80,180,0.1);--border2:rgba(30,100,220,0.25);
+  --text:#0d1f3c;--text2:#5a7399;--text3:#8aa0be;
+  --accent:#1a6ff5;--accent2:#00b860;--accent3:#e53535;--accent4:#e07800;--violet:#6d4fd4;
+  --sidebar-w:72px;--sidebar-open:240px;
+  --shadow:0 8px 32px rgba(30,80,180,0.12);--shadow2:0 2px 10px rgba(30,80,180,0.08);
+  --inset:inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+  display:grid;grid-template-columns:var(--sidebar-w) 1fr;grid-template-rows:64px 1fr;
+  transition:background 0.4s,color 0.4s;overflow-x:hidden}
+body.sidebar-open{grid-template-columns:var(--sidebar-open) 1fr}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar{grid-row:1/-1;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;padding:0 0 16px;
+  height:100vh;position:sticky;top:0;overflow:hidden;width:var(--sidebar-w);
+  transition:width 0.35s cubic-bezier(0.4,0,0.2,1);z-index:50;box-shadow:var(--shadow2)}
+body.sidebar-open .sidebar{width:var(--sidebar-open);align-items:flex-start}
+.sidebar-logo{width:100%;height:64px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;border-bottom:1px solid var(--border);gap:10px;padding:0 16px;overflow:hidden}
+.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:0 0 14px rgba(26,111,245,0.25)}
+.logo-mark svg{width:18px;height:18px;color:#fff}
+.logo-text{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;white-space:nowrap;
+  opacity:0;transform:translateX(-10px);transition:opacity 0.25s,transform 0.25s;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+body.sidebar-open .logo-text{opacity:1;transform:translateX(0)}
+.sidebar-toggle{width:100%;height:44px;display:flex;align-items:center;justify-content:center;
+  background:none;border:none;cursor:pointer;color:var(--text2);flex-shrink:0;margin:6px 0;transition:color 0.2s}
+.sidebar-toggle:hover{color:var(--accent)}
+.sidebar-toggle svg{width:18px;height:18px;transition:transform 0.35s}
+body.sidebar-open .sidebar-toggle svg{transform:rotate(180deg)}
+.sidebar-user{width:100%;padding:8px 14px;display:flex;align-items:center;gap:10px;overflow:hidden;flex-shrink:0;margin-bottom:6px}
+.sidebar-avatar{width:34px;height:34px;border-radius:50%;border:2px solid var(--accent);object-fit:cover;flex-shrink:0}
+.sidebar-user-info{opacity:0;transform:translateX(-8px);transition:opacity 0.2s,transform 0.2s;white-space:nowrap;overflow:hidden}
+body.sidebar-open .sidebar-user-info{opacity:1;transform:translateX(0)}
+.s-uname{font-size:12px;font-weight:600}
+.s-uemail{font-size:10px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;max-width:148px}
+.nav-items{width:100%;flex:1;overflow-y:auto;overflow-x:hidden;padding:2px 8px;display:flex;flex-direction:column;gap:2px}
+.nav-items::-webkit-scrollbar{width:0}
+.nav-item{width:100%;display:flex;align-items:center;gap:11px;padding:10px 10px;
+  border-radius:12px;border:none;background:none;cursor:pointer;color:var(--text2);
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:500;text-decoration:none;
+  transition:all 0.2s;position:relative;overflow:hidden;white-space:nowrap}
+.nav-item:hover{background:var(--glass);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,rgba(26,111,245,0.08),rgba(26,111,245,0.03));
+  color:var(--accent);border:1px solid rgba(26,111,245,0.2)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;
+  width:3px;background:var(--accent);border-radius:0 3px 3px 0}
+.nav-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;transition:background 0.2s,transform 0.2s}
+.nav-item:hover .nav-icon{transform:scale(1.07)}
+.nav-item.active .nav-icon{background:rgba(26,111,245,0.1)}
+.nav-icon svg{width:17px;height:17px}
+.nav-label{opacity:0;transform:translateX(-8px);transition:opacity 0.2s,transform 0.2s;pointer-events:none}
+body.sidebar-open .nav-label{opacity:1;transform:translateX(0);pointer-events:auto}
+.sidebar-footer{width:100%;padding:0 8px;flex-shrink:0;border-top:1px solid var(--border);padding-top:10px}
+
+/* ═══ TOPBAR ═══ */
+.topbar{grid-column:2;background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 26px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:40;box-shadow:var(--shadow2);height:64px}
+.topbar-left{display:flex;flex-direction:column}
+.topbar-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px}
+.topbar-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.theme-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);
+  background:var(--glass);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--text2);transition:all 0.2s}
+.theme-btn:hover{border-color:var(--border2);color:var(--accent)}
+.theme-btn svg{width:15px;height:15px}
+
+/* ═══ MAIN ═══ */
+main{grid-column:2;padding:22px 26px;overflow-y:auto;overflow-x:hidden}
+
+/* ═══ TAB BAR ═══ */
+.tab-bar{display:flex;gap:4px;margin-bottom:22px;background:var(--card);
+  padding:5px;border-radius:14px;border:1px solid var(--border);
+  overflow-x:auto;flex-wrap:nowrap;box-shadow:var(--shadow2)}
+.tab-bar::-webkit-scrollbar{height:0}
+.tab-btn{display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:10px;
+  border:none;background:none;color:var(--text2);font-family:'Inter',sans-serif;
+  font-size:12.5px;font-weight:500;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.tab-btn:hover{color:var(--text);background:var(--glass)}
+.tab-btn.active{background:var(--accent);color:#fff;font-weight:700}
+.tab-btn svg{width:14px;height:14px;flex-shrink:0}
+.tab-pane{display:none}
+.tab-pane.active{display:block;animation:fadeIn 0.25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ═══ PANEL ═══ */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:22px;margin-bottom:16px;box-shadow:var(--shadow2),var(--inset)}
+.panel-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;
+  margin-bottom:18px;display:flex;align-items:center;gap:8px;letter-spacing:-0.2px}
+.panel-title svg{width:16px;height:16px}
+
+/* ═══ GRID LAYOUTS ═══ */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.two-col,.three-col{grid-template-columns:1fr}}
+
+/* ═══ STAT MINI CARDS ═══ */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+@media(max-width:900px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;
+  padding:16px;text-align:center;transition:transform 0.2s,border-color 0.2s}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--border2)}
+.stat-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1.1}
+.stat-lbl{font-size:10px;color:var(--text2);margin-top:4px;font-weight:500;
+  text-transform:uppercase;letter-spacing:0.5px}
+
+/* ═══ PROGRESS BAR ═══ */
+.prog-wrap{margin:14px 0}
+.prog-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.prog-bar{height:6px;background:var(--card2);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.prog-fill{height:100%;border-radius:4px;transition:width 1.2s cubic-bezier(0.4,0,0.2,1)}
+
+/* ═══ SEARCH / FORM ═══ */
+.search-row{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.inp{flex:1;min-width:140px;background:var(--card2);border:1px solid var(--border);
+  border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Inter',sans-serif;
+  font-size:13px;outline:none;transition:border-color 0.2s}
+.inp:focus{border-color:var(--border2)}
+.inp::placeholder{color:var(--text3)}
+.sel{background:var(--card2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:12px;
+  outline:none;cursor:pointer;transition:border-color 0.2s}
+.sel:focus{border-color:var(--border2)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;
+  border-radius:10px;padding:10px 20px;color:#fff;font-weight:700;cursor:pointer;
+  font-size:13px;font-family:'Inter',sans-serif;transition:opacity 0.2s;white-space:nowrap}
+.btn-primary:hover{opacity:0.85}
+.btn-ghost{background:none;border:1px solid var(--border);border-radius:10px;
+  padding:9px 16px;color:var(--text2);font-family:'Inter',sans-serif;font-size:12px;
+  cursor:pointer;transition:all 0.2s}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.btn-danger{background:none;border:1px solid rgba(229,53,53,0.25);border-radius:8px;
+  padding:5px 10px;color:var(--accent3);font-size:11px;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif}
+.btn-danger:hover{background:rgba(229,53,53,0.08)}
+
+/* ═══ FORM GRID ═══ */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:700px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+
+/* ═══ LIST ITEMS ═══ */
+.list-item{background:var(--card2);border:1px solid var(--border);border-radius:14px;
+  padding:16px 18px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;
+  transition:border-color 0.2s;animation:fadeIn 0.2s ease}
+.list-item:hover{border-color:var(--border2)}
+.item-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0}
+.item-icon svg{width:18px;height:18px}
+.item-body{flex:1;min-width:0}
+.item-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:3px;
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.item-meta{font-size:11px;color:var(--text2);line-height:1.5}
+.item-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ═══ BADGES ═══ */
+.badge{display:inline-block;padding:2px 9px;border-radius:50px;font-size:10px;font-weight:600}
+.badge-green{background:rgba(0,184,96,0.1);color:var(--accent2);border:1px solid rgba(0,184,96,0.25)}
+.badge-red{background:rgba(229,53,53,0.1);color:var(--accent3);border:1px solid rgba(229,53,53,0.25)}
+.badge-yellow{background:rgba(224,120,0,0.1);color:var(--accent4);border:1px solid rgba(224,120,0,0.25)}
+.badge-violet{background:rgba(109,79,212,0.1);color:var(--violet);border:1px solid rgba(109,79,212,0.25)}
+.badge-blue{background:rgba(26,111,245,0.1);color:var(--accent);border:1px solid rgba(26,111,245,0.25)}
+
+/* ═══ FOOD RESULT GRID ═══ */
+.food-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:14px}
+.food-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;
+  padding:14px;cursor:pointer;transition:all 0.2s}
+.food-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.food-name{font-weight:600;font-size:13px;margin-bottom:5px}
+.food-macros{display:flex;gap:8px;flex-wrap:wrap}
+.macro-pill{font-size:10px;padding:2px 8px;border-radius:50px;font-weight:600}
+.macro-cal{background:rgba(224,120,0,0.1);color:var(--accent4);border:1px solid rgba(224,120,0,0.2)}
+.macro-prot{background:rgba(26,111,245,0.1);color:var(--accent);border:1px solid rgba(26,111,245,0.2)}
+.macro-carb{background:rgba(0,184,96,0.1);color:var(--accent2);border:1px solid rgba(0,184,96,0.2)}
+.macro-fat{background:rgba(109,79,212,0.1);color:var(--violet);border:1px solid rgba(109,79,212,0.2)}
+
+/* ═══ PLATFORM LINKS ═══ */
+.platform-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.platform-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;
+  padding:18px;text-align:center;text-decoration:none;color:var(--text);
+  transition:all 0.22s;display:flex;flex-direction:column;align-items:center;gap:10px}
+.platform-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:var(--shadow)}
+.platform-logo{font-size:28px;line-height:1}
+.platform-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.platform-desc{font-size:11px;color:var(--text2)}
+
+/* ═══ GOAL CARD ═══ */
+.goal-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:10px;animation:fadeIn 0.2s ease}
+.goal-card:hover{border-color:var(--border2)}
+.goal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.goal-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.goal-prog-wrap{display:flex;align-items:center;gap:14px}
+.goal-ring-wrap{flex-shrink:0}
+.goal-details{flex:1}
+.goal-pct{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
+.goal-sub{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* ═══ DOCTOR CARD ═══ */
+.doctor-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;
+  padding:16px 18px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;
+  transition:border-color 0.2s;animation:fadeIn 0.2s ease}
+.doctor-card:hover{border-color:var(--border2)}
+.doc-avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(26,111,245,0.12),rgba(109,79,212,0.12));
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.doc-info{flex:1}
+.doc-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:7px}
+.doc-meta{font-size:11px;color:var(--text2);line-height:1.6}
+.primary-badge{font-size:9px;padding:2px 7px;background:rgba(26,111,245,0.1);
+  color:var(--accent);border:1px solid rgba(26,111,245,0.25);border-radius:50px;font-weight:700}
+
+/* ═══ INSURANCE CARD ═══ */
+.ins-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;
+  padding:18px;margin-bottom:10px;animation:fadeIn 0.2s ease;transition:border-color 0.2s}
+.ins-card:hover{border-color:var(--border2)}
+.ins-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.ins-provider{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.ins-row{display:flex;justify-content:space-between;font-size:12px;
+  padding:6px 0;border-bottom:1px solid var(--border)}
+.ins-row:last-child{border:none}
+.ins-key{color:var(--text2)}
+
+/* ═══ MODAL ═══ */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,30,80,0.35);
+  backdrop-filter:blur(6px);z-index:1000;display:none;align-items:center;
+  justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:22px;
+  padding:28px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;
+  position:relative;box-shadow:0 20px 60px rgba(10,30,100,0.18);animation:modalIn 0.25s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(0.98)}to{opacity:1;transform:none}}
+.modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:20px;
+  display:flex;align-items:center;justify-content:space-between}
+.modal-close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;
+  line-height:1;transition:color 0.2s;padding:4px}
+.modal-close:hover{color:var(--accent3)}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* ═══ EMPTY STATE ═══ */
+.empty{text-align:center;padding:44px 20px;color:var(--text2)}
+.empty-icon{font-size:42px;margin-bottom:12px;opacity:0.5}
+.empty-text{font-size:14px;line-height:1.6}
+
+/* ═══ TOAST ═══ */
+#toast{position:fixed;bottom:22px;right:22px;background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:12px 18px;font-size:13px;z-index:9999;
+  display:none;align-items:center;gap:8px;box-shadow:var(--shadow);transition:all 0.3s}
+#toast.show{display:flex}
+
+/* ═══ MISC ═══ */
+.section-head{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;letter-spacing:-0.3px;margin-bottom:16px}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.text-muted{color:var(--text2);font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- ════ SIDEBAR ════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    </div>
+    <span class="logo-text">VitalAI</span>
+  </div>
+  <button class="sidebar-toggle" onclick="toggleSidebar()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+  <div class="sidebar-user">
+    <img class="sidebar-avatar" id="userAvatar" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><rect width='36' height='36' fill='%231a6ff5'/><text x='18' y='24' font-size='16' text-anchor='middle' fill='%23ffffff'>U</text></svg>" alt="">
+    <div class="sidebar-user-info">
+      <div class="s-uname" id="userName">Loading...</div>
+      <div class="s-uemail" id="userEmail">—</div>
+    </div>
+  </div>
+  <nav class="nav-items">
+    <a class="nav-item" href="/dashboard" title="Dashboard">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></div>
+      <span class="nav-label">Dashboard</span>
+    </a>
+    <a class="nav-item" href="/dashboard" title="Activity">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <span class="nav-label">Activity</span>
+    </a>
+    <a class="nav-item" href="/dashboard" title="Heart Rate">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+      <span class="nav-label">Heart Rate</span>
+    </a>
+    <a class="nav-item" href="/dashboard" title="Sleep">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
+      <span class="nav-label">Sleep</span>
+    </a>
+    <a class="nav-item" href="/dashboard" title="AI Assistant">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div>
+      <span class="nav-label">AI Assistant</span>
+    </a>
+    <a class="nav-item" href="/medications" title="Medications">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 20H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H20a2 2 0 0 1 2 2v3"/><circle cx="18" cy="18" r="3"/><path d="m22 22-1.5-1.5"/></svg></div>
+      <span class="nav-label">Medications</span>
+    </a>
+    <a class="nav-item active" href="/health" title="Health">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <span class="nav-label">Health</span>
+    </a>
+    <a class="nav-item" href="/dashboard" title="Settings">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      <span class="nav-label">Settings</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <a class="nav-item" href="/logout" style="color:var(--accent3)" title="Sign Out">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+      <span class="nav-label">Sign Out</span>
+    </a>
+  </div>
+</aside>
+
+<!-- ════ TOPBAR ════ -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Indian Health Suite
+    </div>
+    <div class="topbar-sub">Diet · Goals · History · Insurance · Family · Doctors · 1mg & Practo</div>
+  </div>
+  <div class="topbar-right">
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+      <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+
+<!-- ══ TAB BAR ══ -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('diet',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    Diet & Nutrition
+  </button>
+  <button class="tab-btn" onclick="switchTab('goals',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+    Wellness Goals
+  </button>
+  <button class="tab-btn" onclick="switchTab('history',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Medical History
+  </button>
+  <button class="tab-btn" onclick="switchTab('insurance',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Insurance
+  </button>
+  <button class="tab-btn" onclick="switchTab('family',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Family Health
+  </button>
+  <button class="tab-btn" onclick="switchTab('doctors',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    My Doctors
+  </button>
+  <button class="tab-btn" onclick="switchTab('platforms',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    1mg & Practo
+  </button>
+</div>
+
+<!-- ══ TAB 1: DIET & NUTRITION ══ -->
+<div class="tab-pane active" id="tab-diet">
+  <div class="stat-row" id="nutritionStats">
+    <div class="stat-card"><div class="stat-val" id="nCal" style="color:var(--accent4)">0</div><div class="stat-lbl">Calories</div></div>
+    <div class="stat-card"><div class="stat-val" id="nProt" style="color:var(--accent)">0g</div><div class="stat-lbl">Protein</div></div>
+    <div class="stat-card"><div class="stat-val" id="nCarb" style="color:var(--accent2)">0g</div><div class="stat-lbl">Carbs</div></div>
+    <div class="stat-card"><div class="stat-val" id="nFat" style="color:var(--violet)">0g</div><div class="stat-lbl">Fat</div></div>
+    <div class="stat-card"><div class="stat-val" id="nFiber" style="color:var(--accent3)">0g</div><div class="stat-lbl">Fiber</div></div>
+  </div>
+
+  <div class="panel" style="padding:16px 22px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:13px;font-weight:600">Daily Calorie Goal</span>
+      <span style="font-size:13px;color:var(--accent4);font-weight:700" id="calGoalText">0 / 2000 kcal</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="calGoalBar" style="width:0%;background:linear-gradient(90deg,var(--accent4),var(--accent3))"></div></div>
+    <div style="display:flex;gap:18px;margin-top:10px;font-size:11px;color:var(--text2)">
+      <span>🔵 Protein: 50g/day</span>
+      <span>🟢 Carbs: 250g/day</span>
+      <span>🟣 Fat: 65g/day</span>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search Indian Foods
+      </div>
+      <div class="search-row">
+        <input class="inp" id="foodSearch" placeholder="Search idli, dal, chicken..." oninput="searchFoods()">
+        <select class="sel" id="mealFilter" onchange="searchFoods()">
+          <option value="">All Meals</option>
+          <option value="breakfast">Breakfast</option>
+          <option value="lunch">Lunch</option>
+          <option value="dinner">Dinner</option>
+          <option value="snack">Snack</option>
+        </select>
+      </div>
+      <div id="foodResults" style="max-height:340px;overflow-y:auto">
+        <div class="empty"><div class="empty-icon">🍛</div><div class="empty-text">Search for an Indian food above</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" style="justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:8px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Today's Meals
+        </span>
+        <input type="date" class="inp" id="logDate" style="width:auto;padding:5px 10px;font-size:12px" onchange="loadNutrition()">
+      </div>
+      <div id="mealLog">
+        <div class="empty"><div class="empty-icon">🥗</div><div class="empty-text">Loading today's meals...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 2: WELLNESS GOALS ══ -->
+<div class="tab-pane" id="tab-goals">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div class="section-head" style="margin:0">🎯 Wellness Goals</div>
+    <button class="btn-primary" onclick="openModal('goalModal')">+ Add Goal</button>
+  </div>
+  <div id="goalsList">
+    <div class="empty"><div class="empty-icon">🎯</div><div class="empty-text">No goals yet. Add your first wellness goal!</div></div>
+  </div>
+</div>
+
+<!-- ══ TAB 3: MEDICAL HISTORY ══ -->
+<div class="tab-pane" id="tab-history">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div class="section-head" style="margin:0">📋 Medical History</div>
+    <button class="btn-primary" onclick="openModal('historyModal')">+ Add Record</button>
+  </div>
+  <div class="search-row" style="margin-bottom:16px">
+    <select class="sel" id="historyFilter" onchange="loadHistory()">
+      <option value="">All Records</option>
+      <option value="condition">Conditions</option>
+      <option value="surgery">Surgeries</option>
+      <option value="allergy">Allergies</option>
+      <option value="vaccination">Vaccinations</option>
+      <option value="test">Tests</option>
+      <option value="hospitalization">Hospitalization</option>
+    </select>
+  </div>
+  <div id="historyList">
+    <div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No medical records yet.</div></div>
+  </div>
+</div>
+
+<!-- ══ TAB 4: INSURANCE ══ -->
+<div class="tab-pane" id="tab-insurance">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div class="section-head" style="margin:0">🛡️ Health Insurance</div>
+    <button class="btn-primary" onclick="openModal('insuranceModal')">+ Add Policy</button>
+  </div>
+  <div id="insuranceList">
+    <div class="empty"><div class="empty-icon">🛡️</div><div class="empty-text">No insurance policies added yet.</div></div>
+  </div>
+</div>
+
+<!-- ══ TAB 5: FAMILY HEALTH ══ -->
+<div class="tab-pane" id="tab-family">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div class="section-head" style="margin:0">👨‍👩‍👧 Family Health</div>
+    <button class="btn-primary" onclick="openModal('familyModal')">+ Add Member</button>
+  </div>
+  <div id="familyList">
+    <div class="empty"><div class="empty-icon">👨‍👩‍👧</div><div class="empty-text">No family members added yet.</div></div>
+  </div>
+</div>
+
+<!-- ══ TAB 6: MY DOCTORS ══ -->
+<div class="tab-pane" id="tab-doctors">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div class="section-head" style="margin:0">🩺 My Doctors</div>
+    <button class="btn-primary" onclick="openModal('doctorModal')">+ Add Doctor</button>
+  </div>
+  <div id="doctorsList">
+    <div class="empty"><div class="empty-icon">🩺</div><div class="empty-text">No doctors added yet.</div></div>
+  </div>
+</div>
+
+<!-- ══ TAB 7: 1MG & PRACTO ══ -->
+<div class="tab-pane" id="tab-platforms">
+  <div class="section-head">🔗 Indian Health Platforms</div>
+
+  <div class="panel" style="margin-bottom:20px">
+    <div class="panel-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search Medicine or Doctor
+    </div>
+    <div class="search-row">
+      <input class="inp" id="platformSearch" placeholder="Search medicine, doctor, specialist...">
+      <select class="sel" id="platformCity">
+        <option>Bengaluru</option><option>Mumbai</option><option>Delhi</option>
+        <option>Chennai</option><option>Hyderabad</option><option>Pune</option>
+        <option>Kolkata</option><option>Ahmedabad</option><option>Jaipur</option>
+      </select>
+      <button class="btn-primary" onclick="searchPlatforms()">Search</button>
+    </div>
+    <div id="platformResults" style="display:none">
+      <div class="platform-grid" id="platformLinks"></div>
+    </div>
+  </div>
+
+  <div class="section-head" style="font-size:14px;margin-bottom:14px">Quick Access</div>
+  <div class="platform-grid">
+    <a href="https://www.1mg.com" target="_blank" class="platform-card">
+      <div class="platform-logo">💊</div>
+      <div class="platform-name">1mg</div>
+      <div class="platform-desc">Order medicines, lab tests & consult doctors</div>
+    </a>
+    <a href="https://www.practo.com" target="_blank" class="platform-card">
+      <div class="platform-logo">🏥</div>
+      <div class="platform-name">Practo</div>
+      <div class="platform-desc">Book doctors, clinics & online consultations</div>
+    </a>
+    <a href="https://www.apollopharmacy.in" target="_blank" class="platform-card">
+      <div class="platform-logo">🔵</div>
+      <div class="platform-name">Apollo Pharmacy</div>
+      <div class="platform-desc">Medicines, health products & Apollo doctors</div>
+    </a>
+    <a href="https://www.netmeds.com" target="_blank" class="platform-card">
+      <div class="platform-logo">🟢</div>
+      <div class="platform-name">Netmeds</div>
+      <div class="platform-desc">Online pharmacy with genuine medicines</div>
+    </a>
+    <a href="https://www.thyrocare.com" target="_blank" class="platform-card">
+      <div class="platform-logo">🧪</div>
+      <div class="platform-name">Thyrocare</div>
+      <div class="platform-desc">Affordable diagnostics & wellness tests</div>
+    </a>
+    <a href="https://www.lalpathlabs.com" target="_blank" class="platform-card">
+      <div class="platform-logo">🔬</div>
+      <div class="platform-name">Lal PathLabs</div>
+      <div class="platform-desc">Lab tests with home collection</div>
+    </a>
+    <a href="https://www.medibuddy.in" target="_blank" class="platform-card">
+      <div class="platform-logo">👨‍⚕️</div>
+      <div class="platform-name">MediBuddy</div>
+      <div class="platform-desc">Corporate health plans & online doctors</div>
+    </a>
+    <a href="https://www.apollo247.com" target="_blank" class="platform-card">
+      <div class="platform-logo">🌙</div>
+      <div class="platform-name">Apollo 24/7</div>
+      <div class="platform-desc">Round-the-clock doctor consultations</div>
+    </a>
+  </div>
+</div>
+
+</main>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Add Food Modal -->
+<div class="modal-overlay" id="foodModal">
+  <div class="modal">
+    <div class="modal-title">Add Food Entry <button class="modal-close" onclick="closeModal('foodModal')">✕</button></div>
+    <input type="hidden" id="fmFood">
+    <input type="hidden" id="fmCal">
+    <input type="hidden" id="fmProt">
+    <input type="hidden" id="fmCarb">
+    <input type="hidden" id="fmFat">
+    <input type="hidden" id="fmFiber">
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-weight:600;font-size:14px;margin-bottom:6px" id="fmFoodName">—</div>
+      <div class="food-macros" id="fmFoodMacros"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Meal Type</label>
+        <select class="sel inp" id="fmMeal">
+          <option value="breakfast">Breakfast</option>
+          <option value="lunch">Lunch</option>
+          <option value="dinner">Dinner</option>
+          <option value="snack">Snack</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Quantity (servings)</label>
+        <input class="inp" type="number" id="fmQty" value="1" min="0.5" step="0.5">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('foodModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveFoodEntry()">Add to Log</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Goal Modal -->
+<div class="modal-overlay" id="goalModal">
+  <div class="modal">
+    <div class="modal-title">Add Wellness Goal <button class="modal-close" onclick="closeModal('goalModal')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Goal Type</label>
+        <select class="sel inp" id="gType">
+          <option value="fitness">Fitness</option>
+          <option value="weight">Weight</option>
+          <option value="nutrition">Nutrition</option>
+          <option value="sleep">Sleep</option>
+          <option value="mental">Mental Health</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Goal Name</label>
+        <input class="inp" id="gName" placeholder="e.g. Walk 10,000 steps daily">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Value</label>
+        <input class="inp" type="number" id="gTarget" placeholder="e.g. 10000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unit</label>
+        <input class="inp" id="gUnit" placeholder="steps, kg, hours...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Current Value</label>
+        <input class="inp" type="number" id="gCurrent" placeholder="0" value="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deadline</label>
+        <input class="inp" type="date" id="gDeadline">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('goalModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveGoal()">Save Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Update Goal Progress Modal -->
+<div class="modal-overlay" id="goalProgressModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">Update Progress <button class="modal-close" onclick="closeModal('goalProgressModal')">✕</button></div>
+    <input type="hidden" id="gpId">
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Current Value</label>
+      <input class="inp" type="number" id="gpCurrent" placeholder="Enter current value">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('goalProgressModal')">Cancel</button>
+      <button class="btn-primary" onclick="updateGoalProgress()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Medical History Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal">
+    <div class="modal-title">Add Medical Record <button class="modal-close" onclick="closeModal('historyModal')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Record Type</label>
+        <select class="sel inp" id="hType">
+          <option value="condition">Condition</option>
+          <option value="surgery">Surgery</option>
+          <option value="allergy">Allergy</option>
+          <option value="vaccination">Vaccination</option>
+          <option value="test">Test</option>
+          <option value="hospitalization">Hospitalization</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input class="inp" id="hTitle" placeholder="e.g. Type 2 Diabetes">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Description</label>
+        <input class="inp" id="hDesc" placeholder="Additional details...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date Occurred</label>
+        <input class="inp" type="date" id="hDate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Severity</label>
+        <select class="sel inp" id="hSeverity">
+          <option value="mild">Mild</option>
+          <option value="moderate">Moderate</option>
+          <option value="severe">Severe</option>
+          <option value="resolved">Resolved</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Doctor Name</label>
+        <input class="inp" id="hDoctor" placeholder="Dr. ...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hospital</label>
+        <input class="inp" id="hHospital" placeholder="Hospital name">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <input type="checkbox" id="hOngoing" style="width:16px;height:16px;accent-color:var(--accent)">
+      <label for="hOngoing" style="font-size:13px;cursor:pointer">This is an ongoing condition</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('historyModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveHistory()">Save Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Insurance Modal -->
+<div class="modal-overlay" id="insuranceModal">
+  <div class="modal">
+    <div class="modal-title">Add Insurance Policy <button class="modal-close" onclick="closeModal('insuranceModal')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Provider Name</label>
+        <select class="sel inp" id="iProvider">
+          <option value="">Select Provider</option>
+          <option>Star Health Insurance</option><option>Niva Bupa Health Insurance</option>
+          <option>Care Health Insurance</option><option>HDFC ERGO Health Insurance</option>
+          <option>Bajaj Allianz Health Insurance</option><option>New India Assurance</option>
+          <option>ICICI Lombard Health Insurance</option><option>Aditya Birla Health Insurance</option>
+          <option>Tata AIG Health Insurance</option><option>Digit Insurance</option>
+          <option>Acko Health Insurance</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Policy Number</label>
+        <input class="inp" id="iPolicy" placeholder="Policy No.">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Policy Type</label>
+        <select class="sel inp" id="iPolicyType">
+          <option>Individual</option><option>Family Floater</option>
+          <option>Group</option><option>Senior Citizen</option><option>Critical Illness</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sum Insured (₹)</label>
+        <input class="inp" type="number" id="iSum" placeholder="500000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Premium Amount (₹)</label>
+        <input class="inp" type="number" id="iPremium" placeholder="12000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Premium Frequency</label>
+        <select class="sel inp" id="iPremFreq">
+          <option value="yearly">Yearly</option><option value="half-yearly">Half-Yearly</option>
+          <option value="quarterly">Quarterly</option><option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Start Date</label>
+        <input class="inp" type="date" id="iStart">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expiry Date</label>
+        <input class="inp" type="date" id="iExpiry">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nominee Name</label>
+        <input class="inp" id="iNominee" placeholder="Nominee name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contact Number</label>
+        <input class="inp" id="iContact" placeholder="Insurance helpline">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('insuranceModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveInsurance()">Save Policy</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Family Member Modal -->
+<div class="modal-overlay" id="familyModal">
+  <div class="modal">
+    <div class="modal-title">Add Family Member <button class="modal-close" onclick="closeModal('familyModal')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input class="inp" id="famName" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Relation</label>
+        <select class="sel inp" id="famRelation">
+          <option>Spouse</option><option>Father</option><option>Mother</option>
+          <option>Son</option><option>Daughter</option><option>Brother</option>
+          <option>Sister</option><option>Grandfather</option><option>Grandmother</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Age</label>
+        <input class="inp" type="number" id="famAge" placeholder="Age">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Blood Group</label>
+        <select class="sel inp" id="famBlood">
+          <option value="">Unknown</option><option>A+</option><option>A-</option>
+          <option>B+</option><option>B-</option><option>AB+</option><option>AB-</option>
+          <option>O+</option><option>O-</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="inp" id="famPhone" placeholder="Mobile number">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Known Conditions</label>
+        <input class="inp" id="famConditions" placeholder="e.g. Diabetes, BP">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Current Medicines</label>
+        <input class="inp" id="famMeds" placeholder="e.g. Metformin 500mg">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('familyModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveFamilyMember()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Doctor Modal -->
+<div class="modal-overlay" id="doctorModal">
+  <div class="modal">
+    <div class="modal-title">Add Doctor <button class="modal-close" onclick="closeModal('doctorModal')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Doctor Name</label>
+        <input class="inp" id="dName" placeholder="Dr. Full Name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Specialty</label>
+        <select class="sel inp" id="dSpecialty">
+          <option>General Physician</option><option>Cardiologist</option><option>Dermatologist</option>
+          <option>Orthopedic</option><option>Neurologist</option><option>Gynecologist</option>
+          <option>Pediatrician</option><option>Psychiatrist</option><option>Diabetologist</option>
+          <option>Ayurvedic Doctor</option><option>Dentist</option><option>ENT Specialist</option>
+          <option>Ophthalmologist</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hospital / Clinic</label>
+        <input class="inp" id="dHospital" placeholder="Hospital name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">City</label>
+        <select class="sel inp" id="dCity">
+          <option>Bengaluru</option><option>Mumbai</option><option>Delhi</option>
+          <option>Chennai</option><option>Hyderabad</option><option>Pune</option>
+          <option>Kolkata</option><option>Ahmedabad</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="inp" id="dPhone" placeholder="Contact number">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rating (1–5)</label>
+        <input class="inp" type="number" id="dRating" min="1" max="5" placeholder="5">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Notes</label>
+        <input class="inp" id="dNotes" placeholder="Any notes about this doctor...">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <input type="checkbox" id="dPrimary" style="width:16px;height:16px;accent-color:var(--accent)">
+      <label for="dPrimary" style="font-size:13px;cursor:pointer">Set as Primary Doctor</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('doctorModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveDoctor()">Save Doctor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+/* ══ THEME & SIDEBAR ══ */
+function toggleSidebar(){document.body.classList.toggle('sidebar-open')}
+function toggleTheme(){
+  const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('iconSun').style.display=t==='light'?'':'none';
+  document.getElementById('iconMoon').style.display=t==='dark'?'':'none';
+}
+
+/* ══ USER ══ */
+async function loadUser(){
+  try{
+    const r=await fetch('/api/status');
+    const d=await r.json();
+    if(d.user){
+      const u=d.user;
+      document.getElementById('userName').textContent=u.name||'User';
+      document.getElementById('userEmail').textContent=u.email||'';
+      if(u.picture){document.getElementById('userAvatar').src=u.picture;}
+      else{
+        const init=(u.name||'U')[0].toUpperCase();
+        document.getElementById('userAvatar').src=`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><rect width='36' height='36' fill='%231a6ff5'/><text x='18' y='24' font-size='16' text-anchor='middle' fill='%23ffffff'>${init}</text></svg>`;
+      }
+    }
+  }catch(e){}
+}
+
+/* ══ TABS ══ */
+const tabLoaded={};
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(!tabLoaded[name]){
+    tabLoaded[name]=true;
+    if(name==='diet') loadNutrition();
+    if(name==='goals') loadGoals();
+    if(name==='history') loadHistory();
+    if(name==='insurance') loadInsurance();
+    if(name==='family') loadFamily();
+    if(name==='doctors') loadDoctors();
+  }
+}
+
+/* ══ MODAL HELPERS ══ */
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'))});
+
+/* ══ TOAST ══ */
+function toast(msg,ok=true){
+  const t=document.getElementById('toast');
+  t.innerHTML=(ok?'✅ ':'❌ ')+msg;
+  t.className='show';
+  setTimeout(()=>t.className='',3000);
+}
+
+/* ══ NUTRITION ══ */
+let calGoal=2000;
+
+async function loadNutrition(){
+  const dateEl=document.getElementById('logDate');
+  if(!dateEl.value) dateEl.value=new Date().toISOString().split('T')[0];
+  const date=dateEl.value;
+
+  try{
+    const pr=await fetch('/api/preferences');
+    const prefs=await pr.json();
+    calGoal=parseInt(prefs.calorie_goal||2000);
+  }catch(e){}
+
+  try{
+    const r=await fetch(`/api/nutrition/summary?date=${date}`);
+    const d=await r.json();
+    const t=d.totals||{};
+    document.getElementById('nCal').textContent=Math.round(t.cal||0);
+    document.getElementById('nProt').textContent=(t.protein||0).toFixed(1)+'g';
+    document.getElementById('nCarb').textContent=(t.carbs||0).toFixed(1)+'g';
+    document.getElementById('nFat').textContent=(t.fat||0).toFixed(1)+'g';
+    document.getElementById('nFiber').textContent=(t.fiber||0).toFixed(1)+'g';
+    const pct=Math.min(((t.cal||0)/calGoal)*100,100);
+    document.getElementById('calGoalBar').style.width=pct+'%';
+    document.getElementById('calGoalText').textContent=`${Math.round(t.cal||0)} / ${calGoal} kcal`;
+  }catch(e){}
+
+  try{
+    const r=await fetch(`/api/nutrition/log?date=${date}`);
+    const items=await r.json();
+    const el=document.getElementById('mealLog');
+    if(!items.length){
+      el.innerHTML='<div class="empty"><div class="empty-icon">🥗</div><div class="empty-text">No meals logged today.<br>Search and add food from the left panel.</div></div>';
+      return;
+    }
+    const groups={breakfast:[],lunch:[],dinner:[],snack:[],other:[]};
+    items.forEach(i=>{(groups[i.meal_type]||groups.other).push(i)});
+    const icons={breakfast:'🌅',lunch:'☀️',dinner:'🌙',snack:'🍎',other:'🍽️'};
+    let html='';
+    Object.entries(groups).forEach(([meal,foods])=>{
+      if(!foods.length) return;
+      html+=`<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">${icons[meal]} ${meal.charAt(0).toUpperCase()+meal.slice(1)}</div>`;
+      foods.forEach(f=>{
+        html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;gap:10px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.food_name}</div>
+            <div style="font-size:10px;color:var(--text2)">${f.quantity} ${f.unit} · ${Math.round(f.calories)} kcal · P:${(f.protein_g||0).toFixed(1)}g C:${(f.carbs_g||0).toFixed(1)}g F:${(f.fat_g||0).toFixed(1)}g</div>
+          </div>
+          <button class="btn-danger" style="flex-shrink:0" onclick="deleteNutrition(${f.id})">✕</button>
+        </div>`;
+      });
+      html+='</div>';
+    });
+    el.innerHTML=html;
+  }catch(e){}
+}
+
+let searchTimeout;
+function searchFoods(){
+  clearTimeout(searchTimeout);
+  searchTimeout=setTimeout(async()=>{
+    const q=document.getElementById('foodSearch').value.trim();
+    const meal=document.getElementById('mealFilter').value;
+    try{
+      const r=await fetch(`/api/nutrition/foods/search?q=${encodeURIComponent(q)}&category=${meal}`);
+      const foods=await r.json();
+      const el=document.getElementById('foodResults');
+      if(!foods.length){
+        el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No foods found. Try another search.</div></div>';
+        return;
+      }
+      el.innerHTML='<div class="food-grid">'+foods.slice(0,20).map(f=>`
+        <div class="food-card" onclick="openFoodAdd(${JSON.stringify(f).replace(/"/g,'&quot;')})">
+          <div class="food-name">${f.name}</div>
+          <div class="food-macros">
+            <span class="macro-pill macro-cal">${f.calories} kcal</span>
+            <span class="macro-pill macro-prot">P ${f.protein}g</span>
+            <span class="macro-pill macro-carb">C ${f.carbs}g</span>
+            <span class="macro-pill macro-fat">F ${f.fat}g</span>
+          </div>
+        </div>`).join('')+'</div>';
+    }catch(e){}
+  },300);
+}
+
+function openFoodAdd(food){
+  document.getElementById('fmFood').value=food.name;
+  document.getElementById('fmCal').value=food.calories;
+  document.getElementById('fmProt').value=food.protein;
+  document.getElementById('fmCarb').value=food.carbs;
+  document.getElementById('fmFat').value=food.fat;
+  document.getElementById('fmFiber').value=food.fiber||0;
+  document.getElementById('fmFoodName').textContent=food.name;
+  document.getElementById('fmFoodMacros').innerHTML=`
+    <span class="macro-pill macro-cal">${food.calories} kcal</span>
+    <span class="macro-pill macro-prot">P ${food.protein}g</span>
+    <span class="macro-pill macro-carb">C ${food.carbs}g</span>
+    <span class="macro-pill macro-fat">F ${food.fat}g</span>`;
+  openModal('foodModal');
+}
+
+async function saveFoodEntry(){
+  const qty=parseFloat(document.getElementById('fmQty').value)||1;
+  const date=document.getElementById('logDate').value||new Date().toISOString().split('T')[0];
+  const body={
+    log_date:date, meal_type:document.getElementById('fmMeal').value,
+    food_name:document.getElementById('fmFood').value,
+    quantity:qty, unit:'serving',
+    calories:parseFloat(document.getElementById('fmCal').value)*qty,
+    protein_g:parseFloat(document.getElementById('fmProt').value)*qty,
+    carbs_g:parseFloat(document.getElementById('fmCarb').value)*qty,
+    fat_g:parseFloat(document.getElementById('fmFat').value)*qty,
+    fiber_g:parseFloat(document.getElementById('fmFiber').value)*qty,
+  };
+  const r=await fetch('/api/nutrition/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.success){closeModal('foodModal');toast('Food added!');loadNutrition();}
+  else toast(d.error||'Failed',false);
+}
+
+async function deleteNutrition(id){
+  if(!confirm('Remove this food entry?')) return;
+  await fetch(`/api/nutrition/log/${id}`,{method:'DELETE'});
+  toast('Removed');loadNutrition();
+}
+
+/* ══ GOALS ══ */
+const goalColors={fitness:'var(--accent)',weight:'var(--accent2)',nutrition:'var(--accent4)',sleep:'var(--violet)',mental:'var(--accent3)',other:'var(--text2)'};
+
+async function loadGoals(){
+  try{
+    const r=await fetch('/api/goals');
+    const goals=await r.json();
+    const el=document.getElementById('goalsList');
+    if(!goals.length){
+      el.innerHTML='<div class="empty"><div class="empty-icon">🎯</div><div class="empty-text">No goals yet. Add your first wellness goal!</div></div>';
+      return;
+    }
+    el.innerHTML=goals.map(g=>{
+      const pct=g.target>0?Math.min(Math.round((g.current/g.target)*100),100):0;
+      const col=goalColors[g.goal_type]||'var(--accent)';
+      const rr=30, circ=2*Math.PI*rr, dash=circ*(pct/100);
+      return `<div class="goal-card">
+        <div class="goal-header">
+          <div>
+            <div class="goal-name">${g.goal_name}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:3px">${g.goal_type.charAt(0).toUpperCase()+g.goal_type.slice(1)} · ${g.deadline?'Due: '+g.deadline:'No deadline'}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn-ghost" style="padding:5px 10px;font-size:11px" onclick="openGoalProgress(${g.id},${g.current})">Update</button>
+            <button class="btn-danger" onclick="deleteGoal(${g.id})">✕</button>
+          </div>
+        </div>
+        <div class="goal-prog-wrap">
+          <div class="goal-ring-wrap">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="${rr}" fill="none" stroke="var(--border)" stroke-width="6"/>
+              <circle cx="36" cy="36" r="${rr}" fill="none" stroke="${col}" stroke-width="6"
+                stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ/4}"
+                stroke-linecap="round" style="transition:stroke-dasharray 1s ease"/>
+            </svg>
+          </div>
+          <div class="goal-details">
+            <div class="goal-pct" style="color:${col}">${pct}%</div>
+            <div class="goal-sub">${g.current} / ${g.target} ${g.unit}</div>
+            <div class="prog-bar" style="margin-top:8px">
+              <div class="prog-fill" style="width:${pct}%;background:${col}"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function saveGoal(){
+  const name=document.getElementById('gName').value.trim();
+  const target=document.getElementById('gTarget').value;
+  if(!name||!target){toast('Name and target are required',false);return;}
+  const r=await fetch('/api/goals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    goal_type:document.getElementById('gType').value,
+    goal_name:name, target:parseFloat(target),
+    current:parseFloat(document.getElementById('gCurrent').value)||0,
+    unit:document.getElementById('gUnit').value,
+    deadline:document.getElementById('gDeadline').value,
+  })});
+  const d=await r.json();
+  if(d.success){closeModal('goalModal');toast('Goal added!');loadGoals();}
+  else toast(d.error||'Failed',false);
+}
+
+function openGoalProgress(id,current){
+  document.getElementById('gpId').value=id;
+  document.getElementById('gpCurrent').value=current;
+  openModal('goalProgressModal');
+}
+
+async function updateGoalProgress(){
+  const id=document.getElementById('gpId').value;
+  const val=parseFloat(document.getElementById('gpCurrent').value)||0;
+  await fetch(`/api/goals/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({current:val,status:'active'})});
+  closeModal('goalProgressModal');toast('Progress updated!');loadGoals();
+}
+
+async function deleteGoal(id){
+  if(!confirm('Mark this goal as completed?')) return;
+  await fetch(`/api/goals/${id}`,{method:'DELETE'});
+  toast('Goal completed!');loadGoals();
+}
+
+/* ══ MEDICAL HISTORY ══ */
+const histIcons={condition:'🩺',surgery:'🔪',allergy:'⚠️',vaccination:'💉',test:'🧪',hospitalization:'🏥',other:'📋'};
+const sevColor={mild:'badge-green',moderate:'badge-yellow',severe:'badge-red',resolved:'badge-violet'};
+
+async function loadHistory(){
+  const type=document.getElementById('historyFilter').value;
+  try{
+    const r=await fetch(`/api/medical-history?type=${type}`);
+    const items=await r.json();
+    const el=document.getElementById('historyList');
+    if(!items.length){
+      el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No medical records found.</div></div>';
+      return;
+    }
+    el.innerHTML=items.map(h=>`
+      <div class="list-item">
+        <div class="item-icon" style="background:rgba(26,111,245,0.06);font-size:20px">${histIcons[h.record_type]||'📋'}</div>
+        <div class="item-body">
+          <div class="item-title">
+            ${h.title}
+            <span class="badge ${sevColor[h.severity]||'badge-blue'}">${h.severity}</span>
+            ${h.is_ongoing?'<span class="badge badge-red">Ongoing</span>':''}
+          </div>
+          <div class="item-meta">
+            ${h.description?h.description+'<br>':''}
+            ${h.date_occurred?'📅 '+h.date_occurred+' · ':''}
+            ${h.doctor_name?'👨‍⚕️ '+h.doctor_name+' · ':''}
+            ${h.hospital?'🏥 '+h.hospital:''}
+          </div>
+        </div>
+        <div class="item-actions">
+          <button class="btn-danger" onclick="deleteHistory(${h.id})">✕</button>
+        </div>
+      </div>`).join('');
+  }catch(e){}
+}
+
+async function saveHistory(){
+  const title=document.getElementById('hTitle').value.trim();
+  if(!title){toast('Title is required',false);return;}
+  const r=await fetch('/api/medical-history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    record_type:document.getElementById('hType').value,
+    title, description:document.getElementById('hDesc').value,
+    date_occurred:document.getElementById('hDate').value,
+    doctor_name:document.getElementById('hDoctor').value,
+    hospital:document.getElementById('hHospital').value,
+    severity:document.getElementById('hSeverity').value,
+    is_ongoing:document.getElementById('hOngoing').checked,
+  })});
+  const d=await r.json();
+  if(d.success){closeModal('historyModal');toast('Record added!');loadHistory();}
+  else toast(d.error||'Failed',false);
+}
+
+async function deleteHistory(id){
+  if(!confirm('Delete this record?')) return;
+  await fetch(`/api/medical-history/${id}`,{method:'DELETE'});
+  toast('Deleted');loadHistory();
+}
+
+/* ══ INSURANCE ══ */
+async function loadInsurance(){
+  try{
+    const r=await fetch('/api/insurance');
+    const items=await r.json();
+    const el=document.getElementById('insuranceList');
+    if(!items.length){
+      el.innerHTML='<div class="empty"><div class="empty-icon">🛡️</div><div class="empty-text">No insurance policies added yet.</div></div>';
+      return;
+    }
+    el.innerHTML=items.map(ins=>{
+      const today=new Date();
+      const expiry=ins.expiry_date?new Date(ins.expiry_date):null;
+      const daysLeft=expiry?Math.round((expiry-today)/(1000*60*60*24)):null;
+      const expiryBadge=daysLeft!==null?(daysLeft<=30?`<span class="badge badge-red">Expires in ${daysLeft}d</span>`:daysLeft<=60?`<span class="badge badge-yellow">Expires in ${daysLeft}d</span>`:''):'';
+      return `<div class="ins-card">
+        <div class="ins-header">
+          <div>
+            <div class="ins-provider">🛡️ ${ins.provider_name} ${expiryBadge}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:3px">${ins.policy_type||''} · #${ins.policy_number||'N/A'}</div>
+          </div>
+          <button class="btn-danger" onclick="deleteInsurance(${ins.id})">✕</button>
+        </div>
+        <div class="ins-row"><span class="ins-key">Sum Insured</span><span style="font-weight:700;color:var(--accent2)">₹${(ins.sum_insured||0).toLocaleString('en-IN')}</span></div>
+        <div class="ins-row"><span class="ins-key">Premium</span><span>₹${(ins.premium_amount||0).toLocaleString('en-IN')} / ${ins.premium_freq||'yearly'}</span></div>
+        <div class="ins-row"><span class="ins-key">Valid</span><span>${ins.start_date||'—'} → ${ins.expiry_date||'—'}</span></div>
+        ${ins.nominee_name?`<div class="ins-row"><span class="ins-key">Nominee</span><span>${ins.nominee_name}</span></div>`:''}
+        ${ins.contact_number?`<div class="ins-row"><span class="ins-key">Helpline</span><span>${ins.contact_number}</span></div>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function saveInsurance(){
+  const provider=document.getElementById('iProvider').value;
+  if(!provider){toast('Select a provider',false);return;}
+  const r=await fetch('/api/insurance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    provider_name:provider,
+    policy_number:document.getElementById('iPolicy').value,
+    policy_type:document.getElementById('iPolicyType').value,
+    sum_insured:parseFloat(document.getElementById('iSum').value)||0,
+    premium_amount:parseFloat(document.getElementById('iPremium').value)||0,
+    premium_freq:document.getElementById('iPremFreq').value,
+    start_date:document.getElementById('iStart').value,
+    expiry_date:document.getElementById('iExpiry').value,
+    nominee_name:document.getElementById('iNominee').value,
+    contact_number:document.getElementById('iContact').value,
+  })});
+  const d=await r.json();
+  if(d.success){closeModal('insuranceModal');toast('Policy saved!');loadInsurance();}
+  else toast(d.error||'Failed',false);
+}
+
+async function deleteInsurance(id){
+  if(!confirm('Delete this policy?')) return;
+  await fetch(`/api/insurance/${id}`,{method:'DELETE'});
+  toast('Deleted');loadInsurance();
+}
+
+/* ══ FAMILY ══ */
+const relationEmoji={Spouse:'💑',Father:'👨',Mother:'👩',Son:'👦',Daughter:'👧',
+  Brother:'🧑',Sister:'👱‍♀️',Grandfather:'👴',Grandmother:'👵',Other:'👤'};
+
+async function loadFamily(){
+  try{
+    const r=await fetch('/api/family');
+    const members=await r.json();
+    const el=document.getElementById('familyList');
+    if(!members.length){
+      el.innerHTML='<div class="empty"><div class="empty-icon">👨‍👩‍👧</div><div class="empty-text">No family members added yet.</div></div>';
+      return;
+    }
+    el.innerHTML=members.map(m=>`
+      <div class="list-item">
+        <div class="item-icon" style="background:rgba(109,79,212,0.08);font-size:20px">${relationEmoji[m.relation]||'👤'}</div>
+        <div class="item-body">
+          <div class="item-title">
+            ${m.name}
+            <span class="badge badge-violet">${m.relation}</span>
+            ${m.blood_group?`<span class="badge badge-red">${m.blood_group}</span>`:''}
+          </div>
+          <div class="item-meta">
+            ${m.age?'Age: '+m.age+' · ':''}${m.phone?'📞 '+m.phone+'<br>':''}
+            ${m.conditions?'Conditions: '+m.conditions+'<br>':''}
+            ${m.medicines?'Medicines: '+m.medicines:''}
+          </div>
+        </div>
+        <div class="item-actions">
+          <button class="btn-danger" onclick="deleteFamilyMember(${m.id})">✕</button>
+        </div>
+      </div>`).join('');
+  }catch(e){}
+}
+
+async function saveFamilyMember(){
+  const name=document.getElementById('famName').value.trim();
+  if(!name){toast('Name is required',false);return;}
+  const r=await fetch('/api/family',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    name, relation:document.getElementById('famRelation').value,
+    age:parseInt(document.getElementById('famAge').value)||null,
+    blood_group:document.getElementById('famBlood').value,
+    phone:document.getElementById('famPhone').value,
+    conditions:document.getElementById('famConditions').value,
+    medicines:document.getElementById('famMeds').value,
+  })});
+  const d=await r.json();
+  if(d.success){closeModal('familyModal');toast('Member added!');loadFamily();}
+  else toast(d.error||'Failed',false);
+}
+
+async function deleteFamilyMember(id){
+  if(!confirm('Remove this family member?')) return;
+  await fetch(`/api/family/${id}`,{method:'DELETE'});
+  toast('Removed');loadFamily();
+}
+
+/* ══ DOCTORS ══ */
+async function loadDoctors(){
+  try{
+    const r=await fetch('/api/doctors');
+    const docs=await r.json();
+    const el=document.getElementById('doctorsList');
+    if(!docs.length){
+      el.innerHTML='<div class="empty"><div class="empty-icon">🩺</div><div class="empty-text">No doctors added yet.</div></div>';
+      return;
+    }
+    el.innerHTML=docs.map(d=>{
+      const stars='⭐'.repeat(Math.round(d.rating||0));
+      return `<div class="doctor-card">
+        <div class="doc-avatar">🩺</div>
+        <div class="doc-info">
+          <div class="doc-name">
+            ${d.name}
+            ${d.is_primary?'<span class="primary-badge">Primary</span>':''}
+          </div>
+          <div class="doc-meta">
+            <strong>${d.specialty||''}</strong>${d.hospital?' · '+d.hospital:''}<br>
+            ${d.city?'📍 '+d.city+' · ':''}${d.phone?'📞 '+d.phone:''}
+            ${stars?'<br>'+stars:''}
+            ${d.notes?'<br><span style="color:var(--text3)">'+d.notes+'</span>':''}
+          </div>
+        </div>
+        <div class="item-actions">
+          <a href="https://www.practo.com/search/doctors?results_type=doctor&q=${encodeURIComponent(d.specialty||d.name)}&city=${encodeURIComponent(d.city||'Bengaluru')}" target="_blank" class="btn-ghost" style="font-size:11px;text-decoration:none;display:flex;align-items:center;padding:5px 10px">Practo</a>
+          <button class="btn-danger" onclick="deleteDoctor(${d.id})">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function saveDoctor(){
+  const name=document.getElementById('dName').value.trim();
+  if(!name){toast('Doctor name is required',false);return;}
+  const r=await fetch('/api/doctors',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    name, specialty:document.getElementById('dSpecialty').value,
+    hospital:document.getElementById('dHospital').value,
+    city:document.getElementById('dCity').value,
+    phone:document.getElementById('dPhone').value,
+    rating:parseFloat(document.getElementById('dRating').value)||0,
+    notes:document.getElementById('dNotes').value,
+    is_primary:document.getElementById('dPrimary').checked,
+  })});
+  const d=await r.json();
+  if(d.success){closeModal('doctorModal');toast('Doctor saved!');loadDoctors();}
+  else toast(d.error||'Failed',false);
+}
+
+async function deleteDoctor(id){
+  if(!confirm('Remove this doctor?')) return;
+  await fetch(`/api/doctors/${id}`,{method:'DELETE'});
+  toast('Removed');loadDoctors();
+}
+
+/* ══ PLATFORMS ══ */
+async function searchPlatforms(){
+  const q=document.getElementById('platformSearch').value.trim();
+  const city=document.getElementById('platformCity').value;
+  if(!q){toast('Enter a search term',false);return;}
+  try{
+    const r=await fetch(`/api/platform/search?q=${encodeURIComponent(q)}&city=${encodeURIComponent(city)}`);
+    const d=await r.json();
+    document.getElementById('platformResults').style.display='block';
+    document.getElementById('platformLinks').innerHTML=`
+      <a href="${d.practo_url}" target="_blank" class="platform-card">
+        <div class="platform-logo">🏥</div><div class="platform-name">Practo</div>
+        <div class="platform-desc">Find doctors for "${q}" in ${city}</div>
+      </a>
+      <a href="${d.onemg_url}" target="_blank" class="platform-card">
+        <div class="platform-logo">💊</div><div class="platform-name">1mg</div>
+        <div class="platform-desc">Buy "${q}" medicines online</div>
+      </a>
+      <a href="${d.apollo_url}" target="_blank" class="platform-card">
+        <div class="platform-logo">🔵</div><div class="platform-name">Apollo Pharmacy</div>
+        <div class="platform-desc">Search "${q}" at Apollo</div>
+      </a>
+      <a href="${d.netmeds_url}" target="_blank" class="platform-card">
+        <div class="platform-logo">🟢</div><div class="platform-name">Netmeds</div>
+        <div class="platform-desc">Order "${q}" from Netmeds</div>
+      </a>`;
+  }catch(e){}
+}
+
+/* ══ INIT ══ */
+loadUser();
+tabLoaded['diet']=true;
+document.getElementById('logDate').value=new Date().toISOString().split('T')[0];
+loadNutrition();
+setTimeout(()=>searchFoods(),300);
+</script>
+</body>
+</html>

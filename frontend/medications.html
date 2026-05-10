@@ -487,6 +487,22 @@ main{grid-column:2;padding:22px 26px;overflow-y:auto;overflow-x:hidden}
 </header>
 
 <main>
+  <!-- Export Bar -->
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+    <span style="font-size:13px;color:var(--text-muted);font-weight:500;">📤 Export:</span>
+    <a href="/api/export/medications/csv" download style="text-decoration:none;">
+      <button style="background:rgba(0,212,255,0.12);border:1px solid var(--accent);color:var(--accent);padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">⬇ Medications (CSV)</button>
+    </a>
+    <a href="/api/export/dose-history/csv" download style="text-decoration:none;">
+      <button style="background:rgba(0,230,118,0.12);border:1px solid var(--accent4);color:var(--accent4);padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">⬇ Dose History (CSV)</button>
+    </a>
+    <a href="/api/export/health-report/json" download style="text-decoration:none;">
+      <button style="background:rgba(162,89,255,0.12);border:1px solid var(--accent2);color:var(--accent2);padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">⬇ Full Report (JSON)</button>
+    </a>
+    <a href="/api/export/health-report/xml" download style="text-decoration:none;">
+      <button style="background:rgba(255,185,0,0.12);border:1px solid #ffb900;color:#ffb900;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">⬇ Full Report (XML)</button>
+    </a>
+  </div>
   <!-- Alert cards -->
   <div class="alert-grid">
     <div class="alert-card info">

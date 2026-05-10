@@ -534,9 +534,35 @@ def my_medicines():
 
 @medication_bp.route("/api/med/my-medicines", methods=["POST"])
 def add_my_medicine():
-    d = request.get_json()
-    if not d.get("dosage_amount") or not d.get("frequency") or not d.get("start_date"):
-        return jsonify({"error": "dosage_amount, frequency, start_date are required"}), 400
+    d = request.get_json(silent=True) or {}
+
+    # Validate required fields
+    missing = [f for f in ["dosage_amount", "frequency", "start_date"] if not d.get(f)]
+    if missing:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+
+    # Validate date format
+    for date_field in ["start_date", "end_date", "expiry_date"]:
+        val = d.get(date_field)
+        if val:
+            try:
+                datetime.strptime(val, "%Y-%m-%d")
+            except ValueError:
+                return jsonify({"error": f"Invalid date format for {date_field}. Use YYYY-MM-DD"}), 400
+
+    # Validate numeric fields
+    for num_field in ["times_per_day", "total_quantity", "refill_alert_at"]:
+        val = d.get(num_field)
+        if val is not None:
+            try:
+                int(val)
+            except (ValueError, TypeError):
+                return jsonify({"error": f"{num_field} must be a number"}), 400
+
+    # Validate enum fields
+    valid_meal_timings = {"before_meal","after_meal","with_meal","any","empty_stomach"}
+    if d.get("meal_timing") and d["meal_timing"] not in valid_meal_timings:
+        return jsonify({"error": f"meal_timing must be one of: {', '.join(valid_meal_timings)}"}), 400
 
     conn = get_db()
     conn.execute("""
@@ -545,11 +571,12 @@ def add_my_medicine():
          meal_timing,start_date,end_date,prescribed_by,notes,
          total_quantity,remaining_qty,refill_alert_at,expiry_date)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    """, (d.get("catalogue_id"), d.get("custom_name"), d["dosage_amount"],
-          d["frequency"], d.get("times_per_day", 1), d.get("meal_timing","any"),
-          d["start_date"], d.get("end_date"), d.get("prescribed_by"),
-          d.get("notes"), d.get("total_quantity"), d.get("total_quantity"),
-          d.get("refill_alert_at", 5), d.get("expiry_date")))
+    """, (d.get("catalogue_id"), d.get("custom_name","").strip()[:200], d["dosage_amount"].strip()[:50],
+          d["frequency"].strip()[:100], int(d.get("times_per_day", 1)), d.get("meal_timing","any"),
+          d["start_date"], d.get("end_date"), d.get("prescribed_by","").strip()[:200] if d.get("prescribed_by") else None,
+          d.get("notes","").strip()[:1000] if d.get("notes") else None,
+          d.get("total_quantity"), d.get("total_quantity"),
+          int(d.get("refill_alert_at", 5)), d.get("expiry_date")))
 
     user_med_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 

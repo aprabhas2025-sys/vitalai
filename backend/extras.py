@@ -299,17 +299,36 @@ def search_foods():
 
 @extras_bp.route("/api/nutrition/log", methods=["POST"])
 def add_nutrition_log():
-    d = request.get_json()
+    d = request.get_json(silent=True) or {}
+    if not d.get("food_name","").strip():
+        return jsonify({"error": "food_name is required"}), 400
+    log_date = d.get("log_date", date.today().isoformat())
+    try:
+        datetime.strptime(log_date, "%Y-%m-%d")
+    except ValueError:
+        return jsonify({"error": "Invalid log_date format. Use YYYY-MM-DD"}), 400
+    valid_meals = {"breakfast","lunch","dinner","snack","other"}
+    meal_type = d.get("meal_type","other")
+    if meal_type not in valid_meals:
+        return jsonify({"error": f"meal_type must be one of: {', '.join(valid_meals)}"}), 400
+    for num_field in ["calories","protein_g","carbs_g","fat_g","fiber_g","quantity"]:
+        val = d.get(num_field)
+        if val is not None:
+            try:
+                float(val)
+                if float(val) < 0:
+                    return jsonify({"error": f"{num_field} cannot be negative"}), 400
+            except (ValueError, TypeError):
+                return jsonify({"error": f"{num_field} must be a number"}), 400
     conn = get_db()
     conn.execute("""INSERT INTO nutrition_log
         (log_date,meal_type,food_name,quantity,unit,calories,protein_g,carbs_g,fat_g,fiber_g,notes)
         VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-        (d.get("log_date", date.today().isoformat()),
-         d.get("meal_type","other"), d["food_name"],
-         d.get("quantity",1), d.get("unit","serving"),
-         d.get("calories",0), d.get("protein_g",0),
-         d.get("carbs_g",0), d.get("fat_g",0),
-         d.get("fiber_g",0), d.get("notes","")))
+        (log_date, meal_type, d["food_name"].strip()[:200],
+         float(d.get("quantity",1)), d.get("unit","serving")[:50],
+         float(d.get("calories",0)), float(d.get("protein_g",0)),
+         float(d.get("carbs_g",0)), float(d.get("fat_g",0)),
+         float(d.get("fiber_g",0)), d.get("notes","").strip()[:500]))
     conn.commit()
     conn.close()
     return jsonify({"success": True})
@@ -359,10 +378,26 @@ def get_goals():
 
 @extras_bp.route("/api/goals", methods=["POST"])
 def add_goal():
-    d = request.get_json()
+    d = request.get_json(silent=True) or {}
+    missing = [f for f in ["goal_type","goal_name","target"] if not str(d.get(f,"")).strip()]
+    if missing:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+    try:
+        target = float(d["target"])
+        if target <= 0:
+            return jsonify({"error": "target must be a positive number"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "target must be a number"}), 400
+    deadline = d.get("deadline","")
+    if deadline:
+        try:
+            datetime.strptime(deadline, "%Y-%m-%d")
+        except ValueError:
+            return jsonify({"error": "Invalid deadline format. Use YYYY-MM-DD"}), 400
     conn = get_db()
     conn.execute("INSERT INTO wellness_goals (goal_type,goal_name,target,current,unit,deadline) VALUES (?,?,?,?,?,?)",
-        (d["goal_type"], d["goal_name"], d["target"], d.get("current",0), d.get("unit",""), d.get("deadline","")))
+        (d["goal_type"].strip()[:100], d["goal_name"].strip()[:200], target,
+         float(d.get("current",0)), d.get("unit","").strip()[:50], deadline))
     conn.commit(); conn.close()
     return jsonify({"success": True})
 

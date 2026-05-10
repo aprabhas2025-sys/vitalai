@@ -36,8 +36,10 @@ CORS(app, supports_credentials=True)
 
 # ── Register Blueprints ──
 from medication import medication_bp, init_med_db
+from extras import extras_bp, init_extras_db
 
 app.register_blueprint(medication_bp)
+app.register_blueprint(extras_bp)
 
 # ─────────────────────────────────────────
 # Google OAuth Config — from environment
@@ -465,6 +467,12 @@ def medications_page():
     return render_template("medications.html", user=session.get("user", {}))
 
 
+@app.route("/health-suite")
+@login_required
+def health_suite():
+    return render_template("health.html", user=session.get("user", {}))
+
+
 
 # ─────────────────────────────────────────
 # API Routes
@@ -736,6 +744,7 @@ def server_error(e):
 # ─────────────────────────────────────────
 def init_all_dbs():
     init_med_db()
+    init_extras_db()
 
 if __name__ == "__main__":
     init_all_dbs()

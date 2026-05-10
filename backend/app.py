@@ -36,10 +36,8 @@ CORS(app, supports_credentials=True)
 
 # ── Register Blueprints ──
 from medication import medication_bp, init_med_db
-from extras     import extras_bp,    init_extras_db
 
 app.register_blueprint(medication_bp)
-app.register_blueprint(extras_bp)
 
 # ─────────────────────────────────────────
 # Google OAuth Config — from environment
@@ -292,7 +290,7 @@ HEALTH_KB = [
 
     # ── Doctor / appointment ──
     (["doctor","physician","specialist","hospital","clinic","appointment","consult"],
-     "🩺 **Finding Medical Help:**\n\nFor your personal doctor network, go to **🏥 Health Manager → My Doctors** in the app.\n\n**Online consultation platforms (India):**\n• **Practo** — book doctors, online consultation\n• **1mg** — online consultation + medicine delivery\n• **Apollo 24/7** — 24-hour doctor availability\n• **MediBuddy** — corporate health plans\n\n**Government hospitals (free):**\n• AIIMS (Delhi, Bhopal, Jodhpur, etc.)\n• Government District Hospitals\n• ESIC hospitals (for employees)\n• Ayushman Bharat Empanelled Hospitals\n\n**Emergency:** 112 (all emergencies)\n**Ambulance:** 108"),
+     "🩺 **Finding Medical Help:**\n\nFor your personal doctor network, go to **💊 Medications → My Doctors** in the app.\n\n**Online consultation platforms (India):**\n• **Practo** — book doctors, online consultation\n• **1mg** — online consultation + medicine delivery\n• **Apollo 24/7** — 24-hour doctor availability\n• **MediBuddy** — corporate health plans\n\n**Government hospitals (free):**\n• AIIMS (Delhi, Bhopal, Jodhpur, etc.)\n• Government District Hospitals\n• ESIC hospitals (for employees)\n• Ayushman Bharat Empanelled Hospitals\n\n**Emergency:** 112 (all emergencies)\n**Ambulance:** 108"),
 ]
 
 
@@ -466,9 +464,6 @@ def dashboard():
 def medications_page():
     return render_template("medications.html", user=session.get("user", {}))
 
-@app.route("/health-extras")
-def health_extras_page():
-    return render_template("health_extras.html", user=session.get("user", {}))
 
 
 # ─────────────────────────────────────────
@@ -829,7 +824,6 @@ def server_error(e):
 # ─────────────────────────────────────────
 def init_all_dbs():
     init_med_db()
-    init_extras_db()
 
 if __name__ == "__main__":
     init_all_dbs()

@@ -622,46 +622,13 @@ def export_dose_history_csv():
     )
 
 
-@app.route("/api/export/nutrition/csv")
-@login_required
-def export_nutrition_csv():
-    """Export nutrition log as CSV."""
-    from extras import get_db as ext_db, rows_to_list
-    days = int(request.args.get("days", 30))
-    since = (datetime.today() - timedelta(days=days)).strftime("%Y-%m-%d")
-
-    conn = ext_db()
-    rows = rows_to_list(conn.execute(
-        "SELECT log_date, meal_type, food_name, quantity, unit, calories, protein_g, carbs_g, fat_g, fiber_g, notes FROM nutrition_log WHERE log_date >= ? ORDER BY log_date DESC",
-        (since,)
-    ).fetchall())
-    conn.close()
-
-    output = io.StringIO()
-    if rows:
-        writer = csv.DictWriter(output, fieldnames=rows[0].keys())
-        writer.writeheader()
-        writer.writerows(rows)
-    else:
-        output.write("No nutrition data found.\n")
-
-    return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=nutrition_log_{datetime.today().strftime('%Y%m%d')}.csv"}
-    )
-
-
 @app.route("/api/export/health-report/json")
 @login_required
 def export_health_report_json():
-    """Export a comprehensive health report as JSON."""
+    """Export medication-based health report as JSON."""
     from medication import get_db as med_db, rows_to_list as med_rows
-    from extras import get_db as ext_db, rows_to_list as ext_rows
 
     mconn = med_db()
-    econn = ext_db()
-
     meds = med_rows(mconn.execute("""
         SELECT COALESCE(um.custom_name, mc.medicine_name) as medicine_name,
                um.dosage_amount, um.frequency, um.meal_timing, um.start_date, um.end_date, um.prescribed_by
@@ -675,16 +642,20 @@ def export_health_report_json():
     taken = sum(r["c"] for r in adh if r["status"] == "taken")
     total = sum(r["c"] for r in adh)
 
-    goals = ext_rows(econn.execute("SELECT goal_type, goal_name, target, current, unit, deadline, status FROM wellness_goals WHERE status='active'").fetchall())
-    conditions = ext_rows(econn.execute("SELECT record_type, title, description, date_occurred, severity, is_ongoing FROM medical_history WHERE is_ongoing=1").fetchall())
-    nutrition_7d = ext_rows(econn.execute("""
-        SELECT log_date, SUM(calories) as total_calories, SUM(protein_g) as protein, SUM(carbs_g) as carbs, SUM(fat_g) as fat
-        FROM nutrition_log WHERE log_date >= ? GROUP BY log_date ORDER BY log_date DESC
-    """, ((datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d"),)).fetchall())
-    family = ext_rows(econn.execute("SELECT name, relation, age, blood_group, conditions FROM family_members").fetchall())
+    refill = med_rows(mconn.execute("""
+        SELECT COALESCE(um.custom_name, mc.medicine_name) as name, um.remaining_qty
+        FROM user_medicines um LEFT JOIN medicine_catalogue mc ON um.catalogue_id=mc.id
+        WHERE um.is_active=1 AND um.remaining_qty IS NOT NULL AND um.remaining_qty <= um.refill_alert_at
+    """).fetchall())
+
+    expiry = med_rows(mconn.execute("""
+        SELECT COALESCE(um.custom_name, mc.medicine_name) as name, um.expiry_date
+        FROM user_medicines um LEFT JOIN medicine_catalogue mc ON um.catalogue_id=mc.id
+        WHERE um.is_active=1 AND um.expiry_date IS NOT NULL
+          AND julianday(um.expiry_date) - julianday('now') <= 30
+    """).fetchall())
 
     mconn.close()
-    econn.close()
 
     report = {
         "generated_at": datetime.now().strftime("%d %b %Y, %I:%M %p"),
@@ -694,10 +665,8 @@ def export_health_report_json():
             "taken": taken, "total": total,
             "percentage": round((taken / total) * 100, 1) if total > 0 else 0
         },
-        "wellness_goals": goals,
-        "ongoing_conditions": conditions,
-        "nutrition_last_7_days": nutrition_7d,
-        "family_members": family,
+        "refill_alerts": refill,
+        "expiry_alerts": expiry,
     }
 
     return Response(
@@ -710,13 +679,10 @@ def export_health_report_json():
 @app.route("/api/export/health-report/xml")
 @login_required
 def export_health_report_xml():
-    """Export comprehensive health report as XML."""
+    """Export medication health report as XML."""
     from medication import get_db as med_db, rows_to_list as med_rows
-    from extras import get_db as ext_db, rows_to_list as ext_rows
 
     mconn = med_db()
-    econn = ext_db()
-
     meds = med_rows(mconn.execute("""
         SELECT COALESCE(um.custom_name, mc.medicine_name) as medicine_name,
                um.dosage_amount, um.frequency, um.meal_timing, um.start_date, um.prescribed_by
@@ -725,34 +691,26 @@ def export_health_report_xml():
         WHERE um.is_active=1
     """).fetchall())
 
-    goals = ext_rows(econn.execute("SELECT goal_type, goal_name, target, current, unit, status FROM wellness_goals WHERE status='active'").fetchall())
-    conditions = ext_rows(econn.execute("SELECT record_type, title, severity, is_ongoing FROM medical_history WHERE is_ongoing=1").fetchall())
+    since30 = (datetime.today() - timedelta(days=30)).strftime("%Y-%m-%d")
+    adh = mconn.execute("SELECT status, COUNT(*) as c FROM dose_log WHERE scheduled_date>=? GROUP BY status", (since30,)).fetchall()
+    taken = sum(r["c"] for r in adh if r["status"] == "taken")
+    total = sum(r["c"] for r in adh)
     mconn.close()
-    econn.close()
 
     root = ET.Element("HealthReport")
     root.set("generated_at", datetime.now().strftime("%d %b %Y, %I:%M %p"))
     root.set("user", session.get("user", {}).get("name", "User"))
+
+    adh_el = ET.SubElement(root, "Adherence_30_Days")
+    ET.SubElement(adh_el, "taken").text = str(taken)
+    ET.SubElement(adh_el, "total").text = str(total)
+    ET.SubElement(adh_el, "percentage").text = str(round((taken / total) * 100, 1) if total > 0 else 0)
 
     meds_el = ET.SubElement(root, "Medications")
     for m in meds:
         med_el = ET.SubElement(meds_el, "Medication")
         for k, v in m.items():
             child = ET.SubElement(med_el, k.replace(" ", "_"))
-            child.text = str(v) if v is not None else ""
-
-    goals_el = ET.SubElement(root, "WellnessGoals")
-    for g in goals:
-        g_el = ET.SubElement(goals_el, "Goal")
-        for k, v in g.items():
-            child = ET.SubElement(g_el, k.replace(" ", "_"))
-            child.text = str(v) if v is not None else ""
-
-    cond_el = ET.SubElement(root, "OngoingConditions")
-    for c in conditions:
-        c_el = ET.SubElement(cond_el, "Condition")
-        for k, v in c.items():
-            child = ET.SubElement(c_el, k.replace(" ", "_"))
             child.text = str(v) if v is not None else ""
 
     xml_str = ET.tostring(root, encoding="unicode", xml_declaration=False)
@@ -763,52 +721,6 @@ def export_health_report_xml():
         mimetype="application/xml",
         headers={"Content-Disposition": f"attachment; filename=health_report_{datetime.today().strftime('%Y%m%d')}.xml"}
     )
-
-
-@app.route("/api/import/nutrition/csv", methods=["POST"])
-@login_required
-def import_nutrition_csv():
-    """Import nutrition log from uploaded CSV file."""
-    from extras import get_db as ext_db
-    if "file" not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-
-    f = request.files["file"]
-    if not f.filename.endswith(".csv"):
-        return jsonify({"error": "Only CSV files are supported"}), 400
-
-    stream = io.StringIO(f.stream.read().decode("UTF-8"))
-    reader = csv.DictReader(stream)
-    required = ["log_date", "food_name", "calories"]
-    inserted = 0
-    errors = []
-
-    conn = ext_db()
-    for i, row in enumerate(reader, 1):
-        missing = [r for r in required if not row.get(r)]
-        if missing:
-            errors.append(f"Row {i}: missing {missing}")
-            continue
-        if not validate_date(row.get("log_date", "")):
-            errors.append(f"Row {i}: invalid date format (use YYYY-MM-DD)")
-            continue
-        try:
-            conn.execute("""INSERT INTO nutrition_log
-                (log_date, meal_type, food_name, quantity, unit, calories, protein_g, carbs_g, fat_g, fiber_g, notes)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-                (row["log_date"], row.get("meal_type","other"),
-                 sanitize_str(row["food_name"]),
-                 float(row.get("quantity", 1)), row.get("unit","serving"),
-                 float(row.get("calories", 0)), float(row.get("protein_g", 0)),
-                 float(row.get("carbs_g", 0)), float(row.get("fat_g", 0)),
-                 float(row.get("fiber_g", 0)), sanitize_str(row.get("notes",""), 500)))
-            inserted += 1
-        except Exception as e:
-            errors.append(f"Row {i}: {str(e)}")
-
-    conn.commit()
-    conn.close()
-    return jsonify({"imported": inserted, "errors": errors})
 
 
 @app.errorhandler(404)

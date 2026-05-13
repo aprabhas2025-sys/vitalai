@@ -408,6 +408,17 @@ def ai_health_reply(message, health_data=None):
 @app.route("/")
 def home():
     return render_template("index.html", user=session.get("user"))
+@app.route("/sitemap.xml")
+def sitemap():
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://vitalai-tuij.onrender.com/</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+</urlset>"""
+    return Response(xml, mimetype="application/xml")
 
 @app.route("/login")
 def login():

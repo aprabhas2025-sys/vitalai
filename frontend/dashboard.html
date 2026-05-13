@@ -144,8 +144,10 @@ body.sidebar-open .sidebar {
   font-weight: 800;
   white-space: nowrap;
   opacity: 0;
+  max-width: 0;
+  overflow: hidden;
   transform: translateX(-10px);
-  transition: opacity 0.25s, transform 0.25s;
+  transition: opacity 0.25s, transform 0.25s, max-width 0.25s;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -154,6 +156,7 @@ body.sidebar-open .sidebar {
 
 body.sidebar-open .logo-text {
   opacity: 1;
+  max-width: 200px;
   transform: translateX(0);
 }
 
@@ -166,12 +169,15 @@ body.sidebar-open .logo-text {
   justify-content: center;
   background: none;
   border: none;
+  outline: none;
+  box-shadow: none;
   cursor: pointer;
   color: var(--text2);
   flex-shrink: 0;
   margin: 8px 0;
   transition: color 0.2s;
 }
+.sidebar-toggle:focus { outline: none; box-shadow: none; }
 .sidebar-toggle:hover { color: var(--accent); }
 .sidebar-toggle svg { width: 20px; height: 20px; transition: transform 0.35s; }
 body.sidebar-open .sidebar-toggle svg { transform: rotate(180deg); }
@@ -847,7 +853,7 @@ main {
       </div>
       <span class="nav-label">Medications</span>
     </a>
-    <a class="nav-item" href="/health-suite" title="Health">
+    <a class="nav-item" href="/health" title="Health">
   <div class="nav-icon">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>

@@ -71,25 +71,45 @@ a{color:inherit;text-decoration:none}
 button{font-family:'Plus Jakarta Sans',sans-serif;cursor:none}
 
 /* ═══════════════════════════════════════════
-   CURSOR
+   CURSOR — OSCILLOSCOPE RING + CLICK PULSE
 ═══════════════════════════════════════════ */
-#cur-dot,#cur-ring{
-  position:fixed;border-radius:50%;pointer-events:none;
-  transform:translate(-50%,-50%);z-index:9999;
-  transition:width .18s,height .18s,opacity .2s;
+#cur-dot {
+  position: fixed;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 7px var(--accent), 0 0 14px var(--accent-glow);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  transition: width .15s, height .15s, opacity .2s;
 }
-#cur-dot{
-  width:6px;height:6px;
-  background:var(--accent);
-  box-shadow:0 0 8px var(--accent);
+/* The oscilloscope ring — drawn as an SVG canvas that follows mouse */
+#cur-ring {
+  position: fixed;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 9998;
+  /* sizing handled by JS / canvas */
 }
-#cur-ring{
-  width:32px;height:32px;
-  border:1.5px solid rgba(0,184,150,0.5);
-  transition:width .22s,height .22s,border-color .2s,transform .08s;
+/* Click pulse rings — injected by JS */
+.click-pulse {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9997;
+  transform: translate(-50%, -50%);
+  border: 1.5px solid var(--accent);
+  width: 10px; height: 10px;
+  opacity: 1;
+  animation: clickPulse .7s cubic-bezier(.22,1,.36,1) forwards;
 }
-body.hovering #cur-dot{width:10px;height:10px;background:var(--ink);box-shadow:none}
-body.hovering #cur-ring{width:46px;height:46px;border-color:rgba(8,12,20,0.25)}
+@keyframes clickPulse {
+  0%   { width: 10px;  height: 10px;  opacity: .9; border-color: var(--accent); }
+  40%  { border-color: var(--heart); }
+  100% { width: 90px;  height: 90px;  opacity: 0;  border-color: var(--heart); }
+}
+body.hovering #cur-dot { width: 8px; height: 8px; background: var(--ink); box-shadow: none; }
 
 /* ═══════════════════════════════════════════
    BACKGROUND TEXTURE
@@ -923,7 +943,7 @@ footer{
 
 <!-- CURSOR -->
 <div id="cur-dot"></div>
-<div id="cur-ring"></div>
+<canvas id="cur-ring"></canvas>
 
 <!-- BACKGROUND -->
 <div class="bg-canvas"></div>
@@ -1327,10 +1347,9 @@ footer{
     VitalAI
   </div>
   <div class="foot-links">
-    <a href="#">Privacy</a>
-    <a href="#">Terms</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
     <a href="#">Contact</a>
-    <a href="/sitemap.xml">Sitemap</a>
   </div>
   <div class="foot-copy">© 2026 VitalAI · Built for Bharat · Privacy First</div>
 </footer>
@@ -1427,23 +1446,122 @@ setInterval(tickClock, 1000);
   });
 })();
 
-/* ── CURSOR ── */
-const dot=document.getElementById('cur-dot');
-const ring=document.getElementById('cur-ring');
-let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove',e=>{
-  mx=e.clientX;my=e.clientY;
-  dot.style.left=mx+'px';dot.style.top=my+'px';
-},{passive:true});
-(function loop(){
-  rx+=(mx-rx)*.11;ry+=(my-ry)*.11;
-  ring.style.left=rx+'px';ring.style.top=ry+'px';
+/* ═══════════════════════════════════════════
+   CURSOR — OSCILLOSCOPE RING + CLICK PULSE
+═══════════════════════════════════════════ */
+(function () {
+  const dot    = document.getElementById('cur-dot');
+  const canvas = document.getElementById('cur-ring');
+  const ctx    = canvas.getContext('2d');
+
+  /* Canvas sizing — ring diameter */
+  const D = 64, R = D / 2;
+  canvas.width  = D;
+  canvas.height = D;
+  canvas.style.cssText = `
+    position:fixed;pointer-events:none;z-index:9998;
+    transform:translate(-50%,-50%);
+    width:${D}px;height:${D}px;
+  `;
+
+  /* Mouse tracking */
+  let mx = -300, my = -300;  // start offscreen
+  let rx = mx,   ry = my;    // ring lags behind
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX;
+    my = e.clientY;
+    dot.style.left = mx + 'px';
+    dot.style.top  = my + 'px';
+  }, { passive: true });
+
+  /* ── OSCILLOSCOPE WAVE ── */
+  const WAVE_PTS   = 64;   // points around the ring
+  const WAVE_AMP   = 5.5;  // max radial displacement (px)
+  const WAVE_SPEED = 2.2;  // radians / second
+  const WAVE_FREQ  = 3;    // cycles around the ring
+  const GLOW_COL   = getComputedStyle(document.documentElement)
+                       .getPropertyValue('--accent').trim() || '#00B896';
+
+  let t = 0;
+
+  function drawOscilloscope(timestamp) {
+    t = timestamp * 0.001 * WAVE_SPEED;
+
+    ctx.clearRect(0, 0, D, D);
+
+    /* Build the ring path as a sine-distorted circle */
+    ctx.beginPath();
+    for (let i = 0; i <= WAVE_PTS; i++) {
+      const angle = (i / WAVE_PTS) * Math.PI * 2;
+      const wave  = Math.sin(angle * WAVE_FREQ - t);
+      const r     = R - 4 + wave * WAVE_AMP;   // 4px inset so glow fits
+      const x     = R + Math.cos(angle) * r;
+      const y     = R + Math.sin(angle) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else         ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+
+    /* Glow — two layers */
+    ctx.strokeStyle = GLOW_COL;
+    ctx.lineWidth   = 3.5;
+    ctx.globalAlpha = 0.18;
+    ctx.shadowColor  = GLOW_COL;
+    ctx.shadowBlur   = 14;
+    ctx.stroke();
+
+    /* Sharp line on top */
+    ctx.globalAlpha  = 0.72;
+    ctx.lineWidth    = 1.4;
+    ctx.shadowBlur   = 6;
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur  = 0;
+  }
+
+  /* ── SMOOTH RING FOLLOW LOOP ── */
+  function loop(ts) {
+    /* Lag: ring catches up to mouse at 12% per frame */
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+
+    canvas.style.left = rx + 'px';
+    canvas.style.top  = ry + 'px';
+
+    drawOscilloscope(ts);
+    requestAnimationFrame(loop);
+  }
   requestAnimationFrame(loop);
+
+  /* ── HOVER STATE: slightly enlarge ring ── */
+  document.querySelectorAll('a,button,.f-card,.t-card,.stat-cell').forEach(el => {
+    el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+    el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+  });
+
+  /* ── CLICK PULSE HEARTBEAT ── */
+  document.addEventListener('click', e => {
+    /* First ring — tight, fast */
+    spawnPulse(e.clientX, e.clientY, 0, '.55s');
+    /* Second ring — wider, delayed — the "dub" of the heartbeat */
+    spawnPulse(e.clientX, e.clientY, 90, '.65s', true);
+  });
+
+  function spawnPulse(x, y, delay, dur, wide) {
+    const el = document.createElement('div');
+    el.className = 'click-pulse';
+    el.style.cssText = `
+      left:${x}px; top:${y}px;
+      animation-duration:${dur};
+      animation-delay:${delay}ms;
+      ${wide ? 'border-width:1px;opacity:.55;' : ''}
+    `;
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
 })();
-document.querySelectorAll('a,button,.f-card,.t-card,.stat-cell').forEach(el=>{
-  el.addEventListener('mouseenter',()=>document.body.classList.add('hovering'));
-  el.addEventListener('mouseleave',()=>document.body.classList.remove('hovering'));
-});
 
 /* ── NAV SCROLL ── */
 const nav=document.getElementById('mainNav');

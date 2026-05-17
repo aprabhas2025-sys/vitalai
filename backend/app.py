@@ -742,6 +742,164 @@ def export_health_report_xml():
     )
 
 
+@app.route("/privacy")
+def privacy():
+    return '''<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — VitalAI</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:760px;margin:60px auto;
+         padding:0 24px;color:#1a1a1a;line-height:1.75;background:#fff}
+    h1{font-size:32px;margin-bottom:6px}
+    h2{font-size:18px;margin-top:36px;margin-bottom:8px;color:#111}
+    p{color:#444;margin-bottom:12px}
+    .badge{display:inline-block;background:#e8faf5;color:#00875a;
+           font-size:12px;padding:4px 12px;border-radius:50px;
+           border:1px solid #b2e8d8;margin-bottom:32px;font-weight:600}
+    footer{margin-top:60px;padding-top:20px;border-top:1px solid #eee;
+           font-size:12px;color:#999}
+    a{color:#00875a}
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <div class="badge">Last updated: May 2026</div>
+
+  <p>VitalAI ("we", "our", or "us") is a personal health monitoring application
+  built for Indian users. This policy explains how we handle your data.</p>
+
+  <h2>1. Information We Access</h2>
+  <p>When you sign in with Google, we access:</p>
+  <ul>
+    <li>Your Google account name and email address (for identification only)</li>
+    <li>Google Fit data — steps, heart rate, calories burned, sleep duration, and body weight</li>
+  </ul>
+  <p>This data is accessed via Google OAuth 2.0 only during your active login session.</p>
+
+  <h2>2. How We Use Your Data</h2>
+  <p>We use your data solely to display your personal health dashboard inside VitalAI.
+  We do not use your data for advertising, analytics, or any other purpose.</p>
+
+  <h2>3. Data Storage</h2>
+  <p>We do not store your Google account data or Google Fit data on our servers.
+  All Google Fit data is fetched live from Google's API each session and is never
+  written to our database. Medication and health records you manually enter are
+  stored locally in an encrypted SQLite database tied to your session.</p>
+
+  <h2>4. Data Sharing</h2>
+  <p>We never sell, rent, or share your personal data with any third party.
+  No data is sent to advertisers or analytics platforms.</p>
+
+  <h2>5. Data Retention</h2>
+  <p>Your session data is cleared when you log out. You may delete all your
+  manually entered health records from within the app at any time.</p>
+
+  <h2>6. Google API Services</h2>
+  <p>VitalAI's use of information received from Google APIs adheres to the
+  <a href="https://developers.google.com/terms/api-services-user-data-policy">
+  Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+
+  <h2>7. Security</h2>
+  <p>We use HTTPS for all communications. OAuth tokens are stored only in
+  server-side sessions and are never exposed to the browser.</p>
+
+  <h2>8. Children's Privacy</h2>
+  <p>VitalAI is not directed at children under 13. We do not knowingly collect
+  data from children.</p>
+
+  <h2>9. Changes to This Policy</h2>
+  <p>We may update this policy. Changes will be posted on this page with an
+  updated date.</p>
+
+  <h2>10. Contact</h2>
+  <p>Questions? Email us at:
+  <a href="mailto:a.prabhas2025@gmail.com">a.prabhas2025@gmail.com</a></p>
+
+  <footer>© 2026 VitalAI · Built for Bharat · Privacy First ·
+  <a href="/">Back to Home</a></footer>
+</body>
+</html>'''
+
+
+@app.route("/terms")
+def terms():
+    return '''<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — VitalAI</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:760px;margin:60px auto;
+         padding:0 24px;color:#1a1a1a;line-height:1.75;background:#fff}
+    h1{font-size:32px;margin-bottom:6px}
+    h2{font-size:18px;margin-top:36px;margin-bottom:8px;color:#111}
+    p{color:#444;margin-bottom:12px}
+    .badge{display:inline-block;background:#e8faf5;color:#00875a;
+           font-size:12px;padding:4px 12px;border-radius:50px;
+           border:1px solid #b2e8d8;margin-bottom:32px;font-weight:600}
+    footer{margin-top:60px;padding-top:20px;border-top:1px solid #eee;
+           font-size:12px;color:#999}
+    a{color:#00875a}
+  </style>
+</head>
+<body>
+  <h1>Terms of Service</h1>
+  <div class="badge">Last updated: May 2026</div>
+
+  <p>By accessing or using VitalAI you agree to these Terms of Service.
+  Please read them carefully.</p>
+
+  <h2>1. Acceptance</h2>
+  <p>By signing in to VitalAI, you confirm you are at least 13 years old and
+  agree to these terms.</p>
+
+  <h2>2. Use of the Service</h2>
+  <p>VitalAI is provided for personal health tracking and informational purposes only.
+  It is not a substitute for professional medical advice, diagnosis, or treatment.
+  Always consult a qualified healthcare provider for medical decisions.</p>
+
+  <h2>3. Your Data</h2>
+  <p>You retain full ownership of all health data you enter into VitalAI.
+  You may delete your data at any time from within the application.</p>
+
+  <h2>4. Prohibited Use</h2>
+  <p>You may not use VitalAI to:</p>
+  <ul>
+    <li>Violate any applicable law or regulation</li>
+    <li>Attempt to access other users' data</li>
+    <li>Reverse-engineer or disrupt the service</li>
+  </ul>
+
+  <h2>5. Availability</h2>
+  <p>We strive to keep VitalAI available at all times but do not guarantee
+  uninterrupted access. The service is provided as-is.</p>
+
+  <h2>6. Limitation of Liability</h2>
+  <p>VitalAI is not liable for any health decisions made based on data shown
+  in the application. Always consult a licensed medical professional.</p>
+
+  <h2>7. Changes</h2>
+  <p>We may modify these terms at any time. Continued use of VitalAI after
+  changes constitutes acceptance of the new terms.</p>
+
+  <h2>8. Contact</h2>
+  <p>Questions? Email: <a href="mailto:a.prabhas2025@gmail.com">a.prabhas2025@gmail.com</a></p>
+
+  <footer>© 2026 VitalAI · Built for Bharat ·
+  <a href="/">Back to Home</a></footer>
+</body>
+</html>'''
+
+
+@app.route("/googlec69646c5c760a3df.html")
+def google_verify():
+    return "google-site-verification: googlec69646c5c760a3df.html", 200, {"Content-Type": "text/html"}
+
+
 @app.errorhandler(404)
 def not_found(e):
     return jsonify({"error": "Route not found"}), 404
